@@ -20,5 +20,5 @@ repomix:
 [windows]
 repomix:
     repomix {{ root_dir }}
-    # Copy the resulting .repomix file to clipboard for ease of sharing with an LLM. This is different from the --copy argument since it copies the file itself, not just the contents.
+    : Copy the resulting .repomix file to clipboard for ease of sharing with an LLM. This is different from the --copy argument since it copies the file itself, not just the contents.
     powershell Set-Clipboard -Path '{{ root_dir }}/.repomix'
