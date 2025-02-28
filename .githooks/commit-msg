@@ -16,5 +16,5 @@ if echo "$COMMIT_MSG" | grep -q "\[skip-version-check\]"; then
     exit 0
 fi
 
-echo "❌ $COMMIT_MSG | ERROR: You must update both VERSION.md and CHANGELOG.md before committing."
+echo "❌ | ERROR: You must update both VERSION.md and CHANGELOG.md before committing."
 exit 1
