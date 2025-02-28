@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### v0.2.1 - 28 February 2025
+- Setup justfile to allow for both mac and windows setups seamlessly
+- Add git pre-commit hooks
+- Create version.go for tracking versions
+
 ### v0.2.0 - 28 February 2025
 - queue -> enter timeout is still 5 minutes, really this should be fine, if you aren't able to join a bracket 5 mins after becoming the active user, then you forfeit your turn (or can extend!)
 - enter -> full timeout is now **15 minutes** (up from 10)
