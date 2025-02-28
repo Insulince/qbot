@@ -1,5 +1,8 @@
 #!/bin/sh
 
+COMMIT_MSG_FILE="$1"
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
 # Check if both VERSION.md and CHANGELOG.md were modified
 if git diff --cached --name-only | grep -q "^VERSION.md$" && \
    git diff --cached --name-only | grep -q "^CHANGELOG.md$"; then
@@ -8,10 +11,10 @@ if git diff --cached --name-only | grep -q "^VERSION.md$" && \
 fi
 
 # Allow bypassing with --no-verify or commit message flag
-if git log -1 --pretty=%B | grep -q "\[skip-version-check\]"; then
+if echo "$COMMIT_MSG" | grep -q "\[skip-version-check\]"; then
     echo "⚠️ Skipping version check due to [skip-version-check] in commit message."
     exit 0
 fi
 
-echo "❌ ERROR: You must update both VERSION.md and CHANGELOG.md before committing."
+echo "❌ $COMMIT_MSG | ERROR: You must update both VERSION.md and CHANGELOG.md before committing."
 exit 1

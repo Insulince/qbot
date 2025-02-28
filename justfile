@@ -5,6 +5,10 @@ set dotenv-load := true
 root_dir := justfile_directory()
 default_cmd := "qbot"
 
+# Recipe setup will enable githooks.
+setup:
+    git config core.hooksPath .githooks
+
 # Recipe run will run the given cmd which defaults to qbot.
 run cmd=default_cmd:
     go run {{ root_dir }}/cmd/{{ cmd }}/main.go
