@@ -62,7 +62,7 @@ func NewQBot() (*QBot, error) {
 		return nil, fmt.Errorf("error opening connection: %w", err)
 	}
 
-	fmt.Println("QBot Q is now running.")
+	fmt.Println("Q is now running.")
 	go q.timeoutChecker(dg)
 
 	return q, nil

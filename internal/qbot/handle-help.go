@@ -5,7 +5,7 @@ import "github.com/bwmarrin/discordgo"
 // handleHelp displays a list of available commands.
 func (q *QBot) handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 	helpMessage := "" +
-		"**About Q**\n" +
+		"**About**\n" +
 		"Q helps mediate a tourney queue to avoid joining the same bracket as other players.\n" +
 		"You should use Q when you are planning to join a bracket and want to avoid joining with other players in this server and/or want to inform other players that you are about to join.\n" +
 		"The main flow is:\n" +

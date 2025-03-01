@@ -4,7 +4,7 @@ import "github.com/bwmarrin/discordgo"
 
 func (q *QBot) handleCommands(s *discordgo.Session, m *discordgo.MessageCreate) {
 	commandsMessage := "" +
-		"\n**QBot Q Commands:**\n" +
+		"\n**Commands:**\n" +
 		"The following are all supported commands. To use these commands, just type them out and send them with no other message content, no need to mention me or add anything else to the message.\n" +
 		"`!queue` - Join the waiting queue.\n" +
 		"`!enter` - Signal that you've entered your bracket (when you are the active player).\n" +
