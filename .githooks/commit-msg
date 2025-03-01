@@ -11,7 +11,7 @@ if git diff --cached --name-only | grep -q "^VERSION.md$" && \
 fi
 
 # Allow bypassing with --no-verify or commit message flag
-if echo "$COMMIT_MSG" | grep -q "\[skip-version-check\]"; then
+if echo "$COMMIT_MSG" | grep -q "\[skip-hooks\]"; then
     echo "⚠️ Skipping version check due to [skip-version-check] in commit message."
     exit 0
 fi
