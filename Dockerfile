@@ -20,6 +20,7 @@ WORKDIR /app
 
 # Copy the statically compiled binary
 COPY --from=builder /app/bot /app/bot
+COPY --from=builder /app/VERSION.md /app/VERSION.md
 
 # Run the bot
 CMD ["/app/bot"]
