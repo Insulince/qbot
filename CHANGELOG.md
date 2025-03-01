@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### v0.3.0 - 28 February 2025
+- Setup deployments to fly.io
+- Setup autodeploy on push
+- Add `!version` command
+
 ### v0.2.1 - 28 February 2025
 - Setup justfile to allow for both mac and windows setups seamlessly
 - Add git pre-commit hooks

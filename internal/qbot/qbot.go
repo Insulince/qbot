@@ -120,5 +120,7 @@ func (q *QBot) messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) 
 		q.handleRemove(s, m)
 	case content == "!moretime":
 		q.handleMoreTime(s, m)
+	case content == "!version":
+		q.handleVersion(s, m)
 	}
 }

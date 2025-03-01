@@ -18,6 +18,7 @@ func (q *QBot) handleCommands(s *discordgo.Session, m *discordgo.MessageCreate) 
 		"\n**Moderator Commands:**\n" +
 		"`!skip` - Force-skip the current active user.\n" +
 		"`!reset` - Clear the entire queue.\n" +
-		"`!remove @user` - Remove a specific user from the queue.\n"
+		"`!remove @user` - Remove a specific user from the queue.\n" +
+		"`!version` - Display bot version\n"
 	s.ChannelMessageSend(m.ChannelID, commandsMessage)
 }

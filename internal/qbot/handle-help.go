@@ -19,4 +19,5 @@ func (q *QBot) handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 		"- If you need more time because your bracket isn't full yet but you are close to being timed out, use `!moretime` to give yourself more time for this purpose.\n"
 	s.ChannelMessageSend(m.ChannelID, helpMessage)
 	q.handleCommands(s, m)
+	q.handleVersion(s, m)
 }
