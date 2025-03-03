@@ -1,6 +1,7 @@
 package qbot
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"log"
@@ -33,6 +34,18 @@ func startScheduler(session *discordgo.Session) {
 		if msg, exists := schedule[key]; exists {
 			session.ChannelMessageSend(announcementChannelID, msg)
 			log.Printf("[%s] Scheduled message sent: %q\n", key, msg)
+
+			if (now.Weekday() == time.Sunday || now.Weekday() == time.Thursday) && now.Hour() == 0 && now.Minute() == 0 {
+				db, err := sql.Open("sqlite", "/var/lib/litefs/qbot.db")
+				if err != nil {
+					log.Println(fmt.Errorf("error opening database: %w", err).Error())
+					return
+				}
+
+				handleLeaderboard(session, nil, db)
+
+				db.Close()
+			}
 		}
 
 		time.Sleep(60 * time.Second) // Check every minute

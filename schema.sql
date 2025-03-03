@@ -1,6 +1,5 @@
--- example table for testing purposes
-CREATE TABLE IF NOT EXISTS tbl (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    data TEXT,
-    created_at TEXT DEFAULT (datetime('now', 'utc'))
+CREATE TABLE IF NOT EXISTS leaderboard (
+    user_id TEXT PRIMARY KEY,
+    username TEXT NOT NULL,
+    wave INTEGER NOT NULL
 );

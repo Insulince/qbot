@@ -1,6 +1,7 @@
 package qbot
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -95,41 +96,55 @@ func (q *QBot) messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) 
 		}
 	}
 
-	content := m.Content
+	args := strings.Split(m.Content, " ")
+	if len(args) == 0 {
+		return
+	}
+
+	db, err := sql.Open("sqlite", "/var/lib/litefs/qbot.db")
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, fmt.Errorf("error opening database: %w", err).Error())
+		return
+	}
+	defer db.Close()
 
 	// Command routing.
-	switch {
-	case content == "!queue":
+	switch args[0] {
+	case "!queue":
 		q.handleQueue(s, m)
-	case content == "!enter":
+	case "!enter":
 		q.handleEnter(s, m)
-	case content == "!full":
+	case "!full":
 		q.handleFull(s, m)
-	case content == "!view":
+	case "!view":
 		q.handleView(s, m)
-	case content == "!leave":
+	case "!leave":
 		q.handleLeave(s, m)
-	case content == "!position":
+	case "!position":
 		q.handlePosition(s, m)
-	case content == "!help":
+	case "!help":
 		q.handleHelp(s, m)
-	case content == "!commands":
+	case "!commands":
 		q.handleCommands(s, m)
-	case content == "!skip":
+	case "!skip":
 		q.handleSkip(s, m)
-	case content == "!reset":
+	case "!reset":
 		q.handleReset(s, m)
-	case strings.HasPrefix(content, "!remove"):
+	case "!remove":
 		q.handleRemove(s, m)
-	case content == "!moretime":
+	case "!moretime":
 		q.handleMoreTime(s, m)
-	case content == "!version":
+	case "!version":
 		q.handleVersion(s, m)
-	case strings.HasPrefix(content, "!insert"):
+	case "!submitwave":
+		handleSubmitWave(s, m, args, db)
+	case "!leaderboard":
+		handleLeaderboard(s, m, db)
+	case "!insert":
 		q.handleInsert(s, m)
-	case content == "!fetch":
+	case "!fetch":
 		q.handleFetch(s, m)
-	case content == "!deleteall":
+	case "!deleteall":
 		q.handleDeleteAll(s, m)
 	}
 }

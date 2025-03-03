@@ -1,5 +1,11 @@
 # CHANGELOG
 
+### v0.5.0 - 3 March 2025
+- Add `!submitwave` command for submitting wave count. Right now its global and static, but eventually this will be per-tourney.
+- Add `!leaderboard` command for displaying leaderboard of player submitted scores
+- At tourney end, `!leaderboard` is automatically ran by Q to announce results.
+- These will have much more work done to them, this is just a basic starting point to actually leverage the database.
+
 ### v0.4.0 - 3 March 2025
 - A lot of tweaking of the Dockerfile to enable LiteFS for SQLite support in Fly.io.
 - Add scheduler.go for sending out scheduled pings regarding tourney events.
