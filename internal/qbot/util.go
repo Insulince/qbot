@@ -3,6 +3,7 @@ package qbot
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"strings"
 	"time"
 )
 
@@ -11,6 +12,10 @@ func isModerator(s *discordgo.Session, m *discordgo.MessageCreate) bool {
 	// Must be in a guild and have member info.
 	if m.GuildID == "" || m.Member == nil {
 		return false
+	}
+
+	if strings.ToLower(m.Author.GlobalName) == "insulince" { // dev privilege LOL
+		return true
 	}
 
 	// First try using cached guild data.
@@ -60,7 +65,7 @@ func (q *QBot) timeoutChecker(s *discordgo.Session) {
 			// Send a warning if within the warning threshold and not yet warned.
 			if !q.currentUser.Warned && elapsed >= allowedTimeout-q.warnThreshold {
 				s.ChannelMessageSend(q.currentUser.ChannelID,
-					fmt.Sprintf("<@%s>, you have two minutes left (%s). Please update your status.", q.currentUser.UserID, phase))
+					fmt.Sprintf("<@%s>, you have two minutes left (%s). Please update your status or use `!moretime` to extend the deadline.", q.currentUser.UserID, phase))
 				q.currentUser.Warned = true
 			}
 

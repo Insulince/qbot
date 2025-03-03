@@ -1,5 +1,11 @@
 # CHANGELOG
 
+### v0.4.0 - 3 March 2025
+- A lot of tweaking of the Dockerfile to enable LiteFS for SQLite support in Fly.io.
+- Add scheduler.go for sending out scheduled pings regarding tourney events.
+- Add temporary `!insert`, `!fetch`, and `!deleteall` commands for testing the database. These will be deleted soon.
+- Add disclaimer section to `!help`
+
 ### v0.3.0 - 28 February 2025
 - Setup deployments to fly.io
 - Setup autodeploy on push

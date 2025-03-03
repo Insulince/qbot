@@ -65,6 +65,9 @@ func NewQBot() (*QBot, error) {
 	fmt.Println("Q is now running.")
 	go q.timeoutChecker(dg)
 
+	// Start the scheduler in a separate Goroutine
+	go startScheduler(dg)
+
 	return q, nil
 }
 
@@ -122,5 +125,11 @@ func (q *QBot) messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) 
 		q.handleMoreTime(s, m)
 	case content == "!version":
 		q.handleVersion(s, m)
+	case strings.HasPrefix(content, "!insert"):
+		q.handleInsert(s, m)
+	case content == "!fetch":
+		q.handleFetch(s, m)
+	case content == "!deleteall":
+		q.handleDeleteAll(s, m)
 	}
 }

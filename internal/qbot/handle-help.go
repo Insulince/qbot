@@ -13,6 +13,10 @@ func (q *QBot) handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 		"2. Wait for your turn (Q will ping you when its your turn).\n" +
 		"3. When its your turn, enter your bracket and tell Q you have done so (`!enter`).\n" +
 		"4. Watch for your bracket to be full, then tell Q so it can move on to the next player in the queue (`!full`).\n" +
+		"**Disclaimer**\n" +
+		"- Q is purely voluntary—there is **no obligation** to use it.\n" +
+		"- Players are not at fault for ignoring or bypassing the queue.\n" +
+		"- The system is meant as a **courtesy tool** to help organize tournament entries for those who choose to participate.\n" +
 		"\n**Notes/Tips**\n" +
 		"- If you take too long to `!enter` when you are at the front of the queue, you will be assumed AFK and kicked out of the queue and the next player will be given a turn. There is a 2 minute warning before this happens.\n" +
 		"- If you take too long to `!full` to signal your bracket is filled after doing `!enter`, you will be assumed AFK and kicked out of the queue and the next player will be given a turn. There is a 2 minute warning before this happens.\n" +

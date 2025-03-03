@@ -6,6 +6,8 @@ import (
 	"github.com/Insulince/jlib/pkg/jmain"
 	"github.com/Insulince/qbot/internal/qbot"
 	"log"
+
+	_ "modernc.org/sqlite" // SQLite driver
 )
 
 func main() {
