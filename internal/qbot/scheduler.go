@@ -14,15 +14,15 @@ var announcementChannelID = "1343112046404833351" // #tournament-queue
 var schedule = map[string]string{
 	// Saturday tourney
 	"Saturday 00:00": "@everyone Tournament signups are now open! Use `!queue` to join",
-	"Saturday 19:00": "@everyone 1-hour warning! Tournament runs close soon",
-	"Saturday 20:00": "@everyone Tournament runs are now closed",
-	"Sunday 00:00":   "@everyone Tournament has ended, rewards are being distributed",
+	"Saturday 23:00": "@everyone 1-hour warning! Tournament runs close soon",
+	"Sunday 00:00":   "@everyone Tournament runs are now closed",
+	"Sunday 04:00":   "@everyone Tournament has ended, rewards are being distributed",
 
 	// Wednesday tourney
 	"Wednesday 00:00": "@everyone Tournament signups are now open! Use `!queue` to join",
-	"Wednesday 19:00": "@everyone 1-hour warning! Tournament runs close soon",
-	"Wednesday 20:00": "@everyone Tournament runs are now closed",
-	"Thursday 00:00":  "@everyone Tournament has ended, rewards are being distributed",
+	"Wednesday 23:00": "@everyone 1-hour warning! Tournament runs close soon",
+	"Thursday 00:00":  "@everyone Tournament runs are now closed",
+	"Thursday 04:00":  "@everyone Tournament has ended, rewards are being distributed",
 }
 
 // Function to check the time and send messages

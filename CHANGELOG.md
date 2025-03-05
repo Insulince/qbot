@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v0.5.1 - 5 March 2025
+- Fix bug in scheduler so that announcements hit at the right time.
+
 ### v0.5.0 - 3 March 2025
 - Add `!submitwave` command for submitting wave count. Right now its global and static, but eventually this will be per-tourney.
 - Add `!leaderboard` command for displaying leaderboard of player submitted scores
