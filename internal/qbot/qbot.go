@@ -140,6 +140,8 @@ func (q *QBot) messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) 
 		handleSubmitWave(s, m, args, db)
 	case "!leaderboard":
 		handleLeaderboard(s, m, db)
+	case "!history":
+		handleHistory(s, m, args, db)
 	case "!insert":
 		q.handleInsert(s, m)
 	case "!fetch":

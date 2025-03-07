@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func handleHistoryCommand(session *discordgo.Session, message *discordgo.MessageCreate, args []string, db *sql.DB) {
+func handleHistory(session *discordgo.Session, message *discordgo.MessageCreate, args []string, db *sql.DB) {
 	if !isModerator(session, message) {
 		return
 	}
