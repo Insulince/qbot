@@ -40,7 +40,7 @@ FROM tournaments;
 	// Update or insert new high score
 	insertWaveSql := `
 INSERT INTO tournament_entries
-    (tournament_id, user_id, username, wave)
+    (tournament_id, user_id, username, waves)
 VALUES
     (? ?, ?, ?)
 ON CONFLICT(user_id) DO UPDATE SET wave = excluded.wave;

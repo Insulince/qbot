@@ -17,7 +17,8 @@ func handleLeaderboard(session *discordgo.Session, message *discordgo.MessageCre
 
 	const fetchTournamentEntriesSql = `
 SELECT
-    user_id, wave
+    user_id,
+    waves
 FROM tournament_entries
 WHERE tournament_id = (SELECT MAX(id) FROM tournaments)
 ORDER BY wave DESC;
