@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS tournament_entries (
     tournament_id INTEGER NOT NULL,
     user_id TEXT NOT NULL,
     username TEXT NOT NULL,
-    waves INTEGER NOT NULL
+    waves INTEGER NOT NULL,
     FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
     UNIQUE (tournament_id, user_id)
 );
