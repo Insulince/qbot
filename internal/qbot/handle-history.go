@@ -37,6 +37,10 @@ WHERE short_name = ?;
 	var tournamentId int64
 	var tournamentName string
 	if err := db.QueryRow(fetchTournamentSql, tournamentShortName).Scan(&tournamentId, &tournamentName); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			session.ChannelMessageSend(message.ChannelID, fmt.Sprintf("_No tournament found for %q_", tournamentShortName))
+			return
+		}
 		log.Println("Error retrieving tournament history:", err)
 		session.ChannelMessageSend(message.ChannelID, "Error retrieving tournament history.")
 		return
