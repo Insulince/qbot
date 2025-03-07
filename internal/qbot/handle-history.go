@@ -48,7 +48,7 @@ SELECT
 	waves
 FROM tournament_entries
 WHERE tournament_id = ?
-ORDER BY wave DESC;
+ORDER BY waves DESC;
 `
 	tournamentEntriesRows, err := db.Query(fetchTournamentEntriesSql, tournamentId)
 	if err != nil {

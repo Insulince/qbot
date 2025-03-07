@@ -19,8 +19,8 @@ func handleSubmitWave(session *discordgo.Session, message *discordgo.MessageCrea
 	username := message.Author.Username
 	id := message.Author.ID
 
-	wave, err := strconv.Atoi(args[1])
-	if err != nil || wave < 1 || wave > 10000 {
+	waves, err := strconv.Atoi(args[1])
+	if err != nil || waves < 1 || waves > 10000 {
 		session.ChannelMessageSend(message.ChannelID, fmt.Sprintf("<@%s> Please enter a valid wave number between 1 and 10000.", id))
 		return
 	}
@@ -43,13 +43,13 @@ INSERT INTO tournament_entries
     (tournament_id, user_id, username, waves)
 VALUES
     (? ?, ?, ?)
-ON CONFLICT(user_id) DO UPDATE SET wave = excluded.wave;
+ON CONFLICT(user_id) DO UPDATE SET waves = excluded.waves;
 `
-	_, err = db.Exec(insertWaveSql, tournamentId, userID, username, wave)
+	_, err = db.Exec(insertWaveSql, tournamentId, userID, username, waves)
 	if err != nil {
 		log.Println("DB Error:", err)
-		session.ChannelMessageSend(message.ChannelID, "Error saving your wave.")
+		session.ChannelMessageSend(message.ChannelID, "Error saving your waves.")
 		return
 	}
-	session.ChannelMessageSend(message.ChannelID, fmt.Sprintf("✅ <@%s> set their wave to **%d**!", id, wave))
+	session.ChannelMessageSend(message.ChannelID, fmt.Sprintf("✅ <@%s> set their waves to **%d**!", id, waves))
 }

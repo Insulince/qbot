@@ -21,7 +21,7 @@ SELECT
     waves
 FROM tournament_entries
 WHERE tournament_id = (SELECT MAX(id) FROM tournaments)
-ORDER BY wave DESC;
+ORDER BY waves DESC;
 `
 	rows, err := db.Query(fetchTournamentEntriesSql)
 	if err != nil {

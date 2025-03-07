@@ -1,11 +1,14 @@
 # CHANGELOG
 
+### v0.6.1 7 March 2025
+- `!submitwave` can also be called as `!submitwaves`
+
 ### v0.6.0 7 March 2025
-- Create !history command for viewing historical tournament results
+- Create `!history` command for viewing historical tournament results
 - Setup automatic tournament creation in sql when a new tourney opens via the scheduler
-- !leaderboard will now pull from the latest tourney, to view previous ones use !history
-- !submitwave also operates on the latest tourney.
-- !view of the queue should no longer ping anyone from its tags.
+- `!leaderboard` will now pull from the latest tourney, to view previous ones use !history
+- `!submitwave` also operates on the latest tourney.
+- `!view` of the queue should no longer ping anyone from its tags.
 
 ### v0.5.1 - 5 March 2025
 - Fix bug in scheduler so that announcements hit at the right time.

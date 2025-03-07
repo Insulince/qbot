@@ -136,7 +136,7 @@ func (q *QBot) messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) 
 		q.handleMoreTime(s, m)
 	case "!version":
 		q.handleVersion(s, m)
-	case "!submitwave":
+	case "!submitwave", "!submitwaves":
 		handleSubmitWave(s, m, args, db)
 	case "!leaderboard":
 		handleLeaderboard(s, m, db)
