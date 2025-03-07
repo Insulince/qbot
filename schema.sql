@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
 CREATE TABLE IF NOT EXISTS tournament_entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tournament_id INTEGER NOT NULL,
-    user_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
     username TEXT NOT NULL,
     waves INTEGER NOT NULL
     FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
