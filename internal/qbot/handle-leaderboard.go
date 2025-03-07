@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"log"
+	"strings"
 )
 
 // Handle !leaderboard
@@ -14,7 +15,14 @@ func handleLeaderboard(session *discordgo.Session, message *discordgo.MessageCre
 		channelId = message.ChannelID
 	}
 
-	rows, err := db.Query("SELECT user_id, wave FROM leaderboard ORDER BY wave DESC LIMIT 30")
+	const fetchTournamentEntriesSql = `
+SELECT
+    user_id, wave
+FROM tournament_entries
+WHERE tournament_id = (SELECT MAX(id) FROM tournaments)
+ORDER BY wave DESC;
+`
+	rows, err := db.Query(fetchTournamentEntriesSql)
 	if err != nil {
 		log.Println("DB Error:", err)
 		session.ChannelMessageSend(channelId, "Error retrieving leaderboard.")
@@ -22,22 +30,24 @@ func handleLeaderboard(session *discordgo.Session, message *discordgo.MessageCre
 	}
 	defer rows.Close()
 
-	leaderboardMsg := "**🏆 Tournament Leaderboard 🏆**\n"
-	i := 1
-	for rows.Next() {
-		var user_id string
-		var wave int
-		rows.Scan(&user_id, &wave)
-		leaderboardMsg += fmt.Sprintf("%d. **<@%s>** - Wave %d\n", i, user_id, wave)
-		i++
+	leaderboardMsg := fmt.Sprintf("🏆 **Latest Tournament Leaderboard** 🏆\n")
+	var entries []string
+	for i := 1; rows.Next(); i++ {
+		var userId string
+		var waves int
+		rows.Scan(&userId, &waves)
+		entry := fmt.Sprintf("%d. **<@%s>** - Wave %d\n", i, userId, waves)
+		entries = append(entries, entry)
 	}
 
-	if i == 1 {
-		leaderboardMsg += "_No records yet._"
+	entriesMsg := "_No entries yet._"
+	if len(entries) > 0 {
+		entriesMsg = strings.Join(entries, "\n")
 	}
+	leaderboardMsg += entriesMsg
 
 	session.ChannelMessageSendComplex(channelId, &discordgo.MessageSend{
-		Content: fmt.Sprintf(leaderboardMsg),
+		Content: leaderboardMsg,
 		AllowedMentions: &discordgo.MessageAllowedMentions{
 			Parse: []discordgo.AllowedMentionType{}, // Prevents pinging
 		},

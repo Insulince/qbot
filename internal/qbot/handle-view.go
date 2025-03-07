@@ -33,5 +33,10 @@ func (q *QBot) handleView(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 	}
 
-	s.ChannelMessageSend(m.ChannelID, msg)
+	s.ChannelMessageSendComplex(m.ChannelID, &discordgo.MessageSend{
+		Content: msg,
+		AllowedMentions: &discordgo.MessageAllowedMentions{
+			Parse: []discordgo.AllowedMentionType{}, // Prevents pinging
+		},
+	})
 }

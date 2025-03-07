@@ -25,8 +25,27 @@ func handleSubmitWave(session *discordgo.Session, message *discordgo.MessageCrea
 		return
 	}
 
+	const fetchLatestTournamentIdSql = `
+SELECT
+    MAX(id)
+FROM tournaments;
+`
+	var tournamentId int
+	if err := db.QueryRow(fetchLatestTournamentIdSql).Scan(&tournamentId); err != nil {
+		log.Println("DB Error:", err)
+		session.ChannelMessageSend(message.ChannelID, "Error retrieving leaderboard.")
+		return
+	}
+
 	// Update or insert new high score
-	_, err = db.Exec("INSERT INTO leaderboard (user_id, username, wave) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET wave = excluded.wave", userID, username, wave)
+	insertWaveSql := `
+INSERT INTO tournament_entries
+    (tournament_id, user_id, username, wave)
+VALUES
+    (? ?, ?, ?)
+ON CONFLICT(user_id) DO UPDATE SET wave = excluded.wave;
+`
+	_, err = db.Exec(insertWaveSql, tournamentId, userID, username, wave)
 	if err != nil {
 		log.Println("DB Error:", err)
 		session.ChannelMessageSend(message.ChannelID, "Error saving your wave.")
