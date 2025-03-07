@@ -68,7 +68,7 @@ ORDER BY waves DESC;
 		var userId string
 		var waves int
 		tournamentEntriesRows.Scan(&userId, &waves)
-		entry := fmt.Sprintf("%d. **<@%s>** - Wave %d\n", i, userId, waves)
+		entry := fmt.Sprintf("%d. **<@%s>** - Wave %d", i, userId, waves)
 		entries = append(entries, entry)
 	}
 
