@@ -5,3 +5,4 @@
 - !bcs for battle conditions maybe?
 - add !clearwave or something to remove yourself from the active tourney leaderboard
 - merge !leaderboard and !history? They serve similar functions, could be combined maybe
+- separate out mod and normal commands in qbot.go

@@ -257,8 +257,11 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 			return q.handleLeaderboard(m, args)
 		case `!history`:
 			return q.handleHistory(m, args)
+		case `!deverror`:
+			return q.handleDevError(m, args)
 		default:
-			return errors.Errorf("unknown command (use `!help` for available commands): %q", command)
+			q.mustPost(m.ChannelID, fmt.Sprintf("unknown command (use `!help` for available commands): `%s`", command))
+			return nil
 		}
 	}()
 

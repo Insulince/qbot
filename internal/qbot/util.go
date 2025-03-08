@@ -3,7 +3,6 @@ package qbot
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/pkg/errors"
 	"log"
 	"strings"
 	"time"
@@ -18,17 +17,10 @@ func (q *QBot) reportError(err error) {
 	const errorChannelID = "1342728552705163336" // #q-testing
 
 	// Format error message
-	errorMessage := fmt.Sprintf("🚨 **Error in QBot** 🚨\n%s", err.Error())
-
-	// Truncate message if too long
-	if len(errorMessage) > 2000 {
-		errorMessage = errorMessage[:1985] + "... (truncated)"
-	}
+	errorMessage := fmt.Sprintf("🚨 **Error in Q** 🚨\n%s", err.Error())
 
 	// Send error message to the private error channel
-	if _, msgErr := q.session.ChannelMessageSend(errorChannelID, errorMessage); msgErr != nil {
-		log.Printf(errors.Wrapf(msgErr, "failed to send error message to Discord (original error: %s)", err).Error())
-	}
+	q.mustPost(errorChannelID, errorMessage)
 
 	// Also log error to stdout for redundancy
 	log.Println(err)

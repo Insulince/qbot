@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v0.7.1 - 8 March 2025
+- Add `!deverror` for developer testing of error handling by the bot.
+
 ### v0.7.0 - 8 March 2025
 - Overhaul error handling and a lot of architectural changes in general.
 - Errors should now be posted to a private discord channel for easier and more timely review.
