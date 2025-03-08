@@ -77,7 +77,7 @@ func createNewTournament(session *discordgo.Session, db *sql.DB) {
 	// Insert new tournament into the database
 	const newTournamentSql = `
 INSERT INTO tournaments
-    (name, shortName)
+    (name, short_name)
 VALUES
     (?, ?);
 `

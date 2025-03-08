@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v0.6.2 7 March 2025
+- `short_name` was being referred to as `shortName` in SQL queries, which is incorrect. This was causing a new tourney to not be created on tourney open.
+
 ### v0.6.1 7 March 2025
 - `!submitwave` can also be called as `!submitwaves`
 
