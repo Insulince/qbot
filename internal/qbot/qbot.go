@@ -178,6 +178,56 @@ func (q *QBot) mustPostWithoutTags(channelId, msg string) {
 	jmust.Must[any](q.postWithoutTags, channelId, msg)
 }
 
+type Cmd struct {
+	Message *discordgo.MessageCreate
+	Command string
+	Args    []string
+}
+
+var emptyCmd = Cmd{}
+
+func (cmd Cmd) String() string {
+	return fmt.Sprintf("%s %s", cmd.Command, strings.Join(cmd.Args, " "))
+}
+
+func (cmd Cmd) Empty() bool {
+	return cmd.Command == ""
+}
+
+func interpretMessage(m *discordgo.MessageCreate) (Cmd, error) {
+	content := m.Content
+
+	// Remove spaces from the left of the message.
+	content = strings.TrimLeftFunc(content, unicode.IsSpace)
+
+	// Check that the message begins with an exclamation mark.
+	if !strings.HasPrefix(content, "!") {
+		return emptyCmd, nil
+	}
+
+	// The message appears to be a bot command, so lets split it up by space to get the command and args.
+	segments := strings.Split(content, " ")
+	if len(segments) == 0 {
+		return Cmd{}, errors.Errorf("message %q does not contain any space-delimitted segments", content)
+	}
+
+	command := strings.ToLower(segments[0])
+	args := segments[1:]
+
+	if exclamationsRegex.MatchString(command) {
+		// This command is composed of only exclamation marks which is not a bot command, do nothing.
+		return emptyCmd, nil
+	}
+
+	var cmd Cmd
+
+	cmd.Message = m
+	cmd.Command = command
+	cmd.Args = args
+
+	return cmd, nil
+}
+
 // messageHandler routes commands to the proper handlers.
 func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) {
 	// NOTE(justin): We explicitly ignore the discord session because we already have one in q. It is required as part
@@ -202,65 +252,55 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 			}
 		}
 
-		// Remove spaces from the left of the message content.
-		m.Content = strings.TrimLeftFunc(m.Content, unicode.IsSpace)
-
-		// Check that the message begins with an exclamation mark.
-		if !strings.HasPrefix(m.Content, "!") {
-			return nil
+		// Extract command and args
+		cmd, err := interpretMessage(m)
+		if err != nil {
+			return errors.Wrapf(err, "interpreting message")
 		}
 
-		// The message appears to be a bot command, so lets split it up by space to get the command and args.
-		segments := strings.Split(m.Content, " ")
-		if len(segments) == 0 {
-			return errors.Errorf("message %q does not contain any space-delimitted segments", m.Content)
-		}
-		command := strings.ToLower(segments[0])
-		args := segments[1:]
-
-		// If the command is only exclamation marks, do nothing
-		if exclamationsRegex.MatchString(command) {
+		if cmd.Empty() {
+			// This message does not appear to be a bot command, do nothing.
 			return nil
 		}
 
 		// Command routing.
-		switch command {
+		switch cmd.Command {
 		case `!queue`, `!enqueue`:
-			return q.handleQueue(m, args)
+			return q.handleQueue(cmd)
 		case `!enter`, `!enterbracket`:
-			return q.handleEnter(m, args)
+			return q.handleEnter(cmd)
 		case `!full`, `!bracketfull`:
-			return q.handleFull(m, args)
+			return q.handleFull(cmd)
 		case `!view`, `!viewqueue`:
-			return q.handleView(m, args)
+			return q.handleView(cmd)
 		case `!leave`, `!leavequeue`:
-			return q.handleLeave(m, args)
+			return q.handleLeave(cmd)
 		case `!position`, `!currentposition`:
-			return q.handlePosition(m, args)
+			return q.handlePosition(cmd)
 		case `!help`:
-			return q.handleHelp(m, args)
+			return q.handleHelp(cmd)
 		case `!commands`:
-			return q.handleCommands(m, args)
+			return q.handleCommands(cmd)
 		case `!version`:
-			return q.handleVersion(m, args)
+			return q.handleVersion(cmd)
 		case `!skip`, `!skipcurrent`:
-			return q.handleSkip(m, args)
+			return q.handleSkip(cmd)
 		case `!reset`, `!resetqueue`:
-			return q.handleReset(m, args)
+			return q.handleReset(cmd)
 		case `!remove`, `!removeplayer`:
-			return q.handleRemove(m, args)
+			return q.handleRemove(cmd)
 		case `!moretime`, `!extend`:
-			return q.handleMoreTime(m, args)
+			return q.handleMoreTime(cmd)
 		case `!submitwave`, `!submitwaves`:
-			return q.handleSubmitWave(m, args)
+			return q.handleSubmitWave(cmd)
 		case `!leaderboard`:
-			return q.handleLeaderboard(m, args)
+			return q.handleLeaderboard(cmd)
 		case `!history`:
-			return q.handleHistory(m, args)
+			return q.handleHistory(cmd)
 		case `!deverror`:
-			return q.handleDevError(m, args)
+			return q.handleDevError(cmd)
 		default:
-			q.mustPost(m.ChannelID, fmt.Sprintf("unknown command (use `!help` for available commands): `%s`", command))
+			q.mustPost(m.ChannelID, fmt.Sprintf("unknown command (use `!help` for available commands): `%s`", cmd.Command))
 			return nil
 		}
 	}()

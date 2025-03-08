@@ -4,26 +4,26 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/Insulince/jlib/pkg/jmust"
-	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func (q *QBot) handleHistory(m *discordgo.MessageCreate, args []string) error {
-	if !q.isModerator(m) {
+func (q *QBot) handleHistory(cmd Cmd) error {
+	if !q.isModerator(cmd.Message) {
 		return nil
 	}
 
-	if len(args) < 2 {
-		q.mustPost(m.ChannelID, "Usage: `!history <tournament-identifier>`")
+	if len(cmd.Args) != 1 {
+		q.mustPost(cmd.Message.ChannelID, "Usage: `!history <tournament-identifier>`")
 		return nil
 	}
+	givenShortName := cmd.Args[0]
 
-	tournamentShortName, err := parseTournamentShortName(args[1])
+	tournamentShortName, err := parseTournamentShortName(givenShortName)
 	if err != nil {
-		q.mustPost(m.ChannelID, errors.Wrap(err, "❌ parse tournament identifier").Error())
+		q.mustPost(cmd.Message.ChannelID, errors.Wrap(err, "❌ parse tournament identifier").Error())
 		return nil
 	}
 
@@ -38,10 +38,10 @@ WHERE short_name = ?;
 	var tournamentName string
 	if err := q.db.QueryRow(fetchTournamentSql, tournamentShortName).Scan(&tournamentId, &tournamentName); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			q.mustPost(m.ChannelID, fmt.Sprintf("_No tournament found for %q_", tournamentShortName))
+			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("_No tournament found for %q_", tournamentShortName))
 			return nil
 		}
-		q.mustPost(m.ChannelID, "Error retrieving tournament history.")
+		q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament history.")
 		return errors.Wrap(err, "query row")
 	}
 
@@ -55,7 +55,7 @@ ORDER BY waves DESC;
 `
 	tournamentEntriesRows, err := q.db.Query(fetchTournamentEntriesSql, tournamentId)
 	if err != nil {
-		q.mustPost(m.ChannelID, "Error retrieving tournament entries.")
+		q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament entries.")
 		return errors.Wrap(err, "query")
 	}
 	jmust.MustClose(tournamentEntriesRows)
@@ -79,7 +79,7 @@ ORDER BY waves DESC;
 	}
 	leaderboardMsg += entriesMsg
 
-	q.mustPostWithoutTags(m.ChannelID, leaderboardMsg)
+	q.mustPostWithoutTags(cmd.Message.ChannelID, leaderboardMsg)
 
 	return nil
 }

@@ -2,21 +2,20 @@ package qbot
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"strings"
 	"time"
 )
 
 // handleRemove allows a moderator to remove a specific user from the queue.
-func (q *QBot) handleRemove(m *discordgo.MessageCreate, _ []string) error {
-	if !q.isModerator(m) {
-		q.mustPost(m.ChannelID, "You do not have permission to use this command. Moderator role required.")
+func (q *QBot) handleRemove(cmd Cmd) error {
+	if !q.isModerator(cmd.Message) {
+		q.mustPost(cmd.Message.ChannelID, "You do not have permission to use this command. Moderator role required.")
 		return nil
 	}
 
-	parts := strings.Fields(m.Content)
+	parts := strings.Fields(cmd.Message.Content)
 	if len(parts) < 2 {
-		q.mustPost(m.ChannelID, "Usage: !remove @user")
+		q.mustPost(cmd.Message.ChannelID, "Usage: !remove @user")
 		return nil
 	}
 	mention := parts[1]
@@ -31,7 +30,7 @@ func (q *QBot) handleRemove(m *discordgo.MessageCreate, _ []string) error {
 		}
 	}
 	if userID == "" {
-		q.mustPost(m.ChannelID, "Could not parse user mention.")
+		q.mustPost(cmd.Message.ChannelID, "Could not parse user mention.")
 		return nil
 	}
 
@@ -52,7 +51,7 @@ func (q *QBot) handleRemove(m *discordgo.MessageCreate, _ []string) error {
 	}
 	q.queue = newQueue
 	if removed {
-		q.mustPost(m.ChannelID, fmt.Sprintf("User <@%s> has been removed from the queue.", userID))
+		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("User <@%s> has been removed from the queue.", userID))
 		// If the active user was removed, promote the next one.
 		if q.currentUser == nil && len(q.queue) > 0 {
 			next := q.queue[0]
@@ -63,7 +62,7 @@ func (q *QBot) handleRemove(m *discordgo.MessageCreate, _ []string) error {
 			q.mustPost(next.ChannelID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", next.UserID))
 		}
 	} else {
-		q.mustPost(m.ChannelID, "User not found in the queue.")
+		q.mustPost(cmd.Message.ChannelID, "User not found in the queue.")
 	}
 
 	return nil

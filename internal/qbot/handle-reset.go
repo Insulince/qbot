@@ -1,13 +1,9 @@
 package qbot
 
-import (
-	"github.com/bwmarrin/discordgo"
-)
-
 // handleReset clears the entire queue (moderator only).
-func (q *QBot) handleReset(m *discordgo.MessageCreate, _ []string) error {
-	if !q.isModerator(m) {
-		q.mustPost(m.ChannelID, "You do not have permission to use this command. Moderator role required.")
+func (q *QBot) handleReset(cmd Cmd) error {
+	if !q.isModerator(cmd.Message) {
+		q.mustPost(cmd.Message.ChannelID, "You do not have permission to use this command. Moderator role required.")
 		return nil
 	}
 
@@ -15,7 +11,7 @@ func (q *QBot) handleReset(m *discordgo.MessageCreate, _ []string) error {
 	defer q.queueMutex.Unlock()
 	q.currentUser = nil
 	q.queue = []QueueItem{}
-	q.mustPost(m.ChannelID, "Queue has been reset.")
+	q.mustPost(cmd.Message.ChannelID, "Queue has been reset.")
 
 	return nil
 }

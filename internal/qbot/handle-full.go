@@ -2,26 +2,25 @@ package qbot
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"time"
 )
 
 // handleFull signals that the active user's bracket is full.
-func (q *QBot) handleFull(m *discordgo.MessageCreate, _ []string) error {
+func (q *QBot) handleFull(cmd Cmd) error {
 	q.queueMutex.Lock()
 	defer q.queueMutex.Unlock()
 
-	if q.currentUser == nil || q.currentUser.UserID != m.Author.ID {
-		q.mustPost(m.ChannelID, fmt.Sprintf("<@%s>, it's not your turn.", m.Author.ID))
+	if q.currentUser == nil || q.currentUser.UserID != cmd.Message.Author.ID {
+		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, it's not your turn.", cmd.Message.Author.ID))
 		return nil
 	}
 
 	if !q.currentUser.Entered {
-		q.mustPost(m.ChannelID, fmt.Sprintf("<@%s>, please signal that you've entered your bracket first using `!enter`.", m.Author.ID))
+		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, please signal that you've entered your bracket first using `!enter`.", cmd.Message.Author.ID))
 		return nil
 	}
 
-	q.mustPost(m.ChannelID, fmt.Sprintf("<@%s>, your bracket is now full. Removing you from the active position.", m.Author.ID))
+	q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, your bracket is now full. Removing you from the active position.", cmd.Message.Author.ID))
 	q.currentUser = nil
 
 	// Promote the next user in the waiting queue, if any.

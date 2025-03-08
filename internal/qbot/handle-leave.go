@@ -2,18 +2,17 @@ package qbot
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"time"
 )
 
 // handleLeave allows a user to remove themselves from the active slot or waiting queue.
-func (q *QBot) handleLeave(m *discordgo.MessageCreate, _ []string) error {
+func (q *QBot) handleLeave(cmd Cmd) error {
 	q.queueMutex.Lock()
 	defer q.queueMutex.Unlock()
 
 	// If the user is currently active.
-	if q.currentUser != nil && q.currentUser.UserID == m.Author.ID {
-		q.mustPost(m.ChannelID, fmt.Sprintf("<@%s>, you have left the active slot.", m.Author.ID))
+	if q.currentUser != nil && q.currentUser.UserID == cmd.Message.Author.ID {
+		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, you have left the active slot.", cmd.Message.Author.ID))
 		q.currentUser = nil
 		// Promote the next user if available.
 		if len(q.queue) > 0 {
@@ -31,7 +30,7 @@ func (q *QBot) handleLeave(m *discordgo.MessageCreate, _ []string) error {
 	found := false
 	var newQueue []QueueItem
 	for _, item := range q.queue {
-		if item.UserID == m.Author.ID {
+		if item.UserID == cmd.Message.Author.ID {
 			found = true
 		} else {
 			newQueue = append(newQueue, item)
@@ -39,9 +38,9 @@ func (q *QBot) handleLeave(m *discordgo.MessageCreate, _ []string) error {
 	}
 	q.queue = newQueue
 	if found {
-		q.mustPost(m.ChannelID, fmt.Sprintf("<@%s>, you have been removed from the queue.", m.Author.ID))
+		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, you have been removed from the queue.", cmd.Message.Author.ID))
 	} else {
-		q.mustPost(m.ChannelID, fmt.Sprintf("<@%s>, you are not in the queue.", m.Author.ID))
+		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, you are not in the queue.", cmd.Message.Author.ID))
 	}
 
 	return nil

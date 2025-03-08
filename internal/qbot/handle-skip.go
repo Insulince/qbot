@@ -2,14 +2,13 @@ package qbot
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"time"
 )
 
 // handleSkip allows a moderator to force-skip the current active user.
-func (q *QBot) handleSkip(m *discordgo.MessageCreate, _ []string) error {
-	if !q.isModerator(m) {
-		q.mustPost(m.ChannelID, "You do not have permission to use this command. Moderator role required.")
+func (q *QBot) handleSkip(cmd Cmd) error {
+	if !q.isModerator(cmd.Message) {
+		q.mustPost(cmd.Message.ChannelID, "You do not have permission to use this command. Moderator role required.")
 		return nil
 	}
 
@@ -17,11 +16,11 @@ func (q *QBot) handleSkip(m *discordgo.MessageCreate, _ []string) error {
 	defer q.queueMutex.Unlock()
 
 	if q.currentUser == nil {
-		q.mustPost(m.ChannelID, "There is no active user to skip.")
+		q.mustPost(cmd.Message.ChannelID, "There is no active user to skip.")
 		return nil
 	}
 
-	q.mustPost(m.ChannelID, fmt.Sprintf("Moderator <@%s> has skipped <@%s>.", m.Author.ID, q.currentUser.UserID))
+	q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("Moderator <@%s> has skipped <@%s>.", cmd.Message.Author.ID, q.currentUser.UserID))
 	q.currentUser = nil
 	if len(q.queue) > 0 {
 		next := q.queue[0]

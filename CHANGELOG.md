@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v0.7.2 - 8 March 2025
+- Correct bug introduced by new command and argument processing logic that allows commands which requires arguments to function properly again (i.e. `!submitwave`)
+
 ### v0.7.1 - 8 March 2025
 - Add `!deverror` for developer testing of error handling by the bot.
 

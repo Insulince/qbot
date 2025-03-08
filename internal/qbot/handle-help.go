@@ -1,12 +1,11 @@
 package qbot
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 )
 
 // handleHelp displays a list of available commands.
-func (q *QBot) handleHelp(m *discordgo.MessageCreate, args []string) error {
+func (q *QBot) handleHelp(cmd Cmd) error {
 	helpMessage := "" +
 		"**About**\n" +
 		"Q helps mediate a tourney queue to avoid joining the same bracket as other players.\n" +
@@ -25,13 +24,13 @@ func (q *QBot) handleHelp(m *discordgo.MessageCreate, args []string) error {
 		"- If you take too long to `!full` to signal your bracket is filled after doing `!enter`, you will be assumed AFK and kicked out of the queue and the next player will be given a turn. There is a 2 minute warning before this happens.\n" +
 		"- If you need more time because your bracket isn't full yet but you are close to being timed out, use `!moretime` to give yourself more time for this purpose.\n"
 
-	q.mustPost(m.ChannelID, helpMessage)
+	q.mustPost(cmd.Message.ChannelID, helpMessage)
 
-	if err := q.handleCommands(m, args); err != nil {
+	if err := q.handleCommands(cmd); err != nil {
 		return errors.Wrap(err, "handle commands")
 	}
 
-	if err := q.handleVersion(m, args); err != nil {
+	if err := q.handleVersion(cmd); err != nil {
 		return errors.Wrap(err, "handle version")
 	}
 

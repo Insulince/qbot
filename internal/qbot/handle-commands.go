@@ -1,10 +1,6 @@
 package qbot
 
-import (
-	"github.com/bwmarrin/discordgo"
-)
-
-func (q *QBot) handleCommands(m *discordgo.MessageCreate, _ []string) error {
+func (q *QBot) handleCommands(cmd Cmd) error {
 	commandsMessage := "" +
 		"\n**Commands:**\n" +
 		"The following are all supported commands. To use these commands, just type them out and send them with no other message content, no need to mention me or add anything else to the message.\n" +
@@ -23,7 +19,7 @@ func (q *QBot) handleCommands(m *discordgo.MessageCreate, _ []string) error {
 		"`!remove @user` - Remove a specific user from the queue.\n" +
 		"`!version` - Display bot version\n"
 
-	q.mustPost(m.ChannelID, commandsMessage)
+	q.mustPost(cmd.Message.ChannelID, commandsMessage)
 
 	return nil
 }

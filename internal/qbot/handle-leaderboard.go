@@ -3,7 +3,6 @@ package qbot
 import (
 	"fmt"
 	"github.com/Insulince/jlib/pkg/jmust"
-	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"strings"
 )
@@ -13,10 +12,10 @@ const (
 )
 
 // Handle !leaderboard
-func (q *QBot) handleLeaderboard(m *discordgo.MessageCreate, _ []string) error {
+func (q *QBot) handleLeaderboard(cmd Cmd) error {
 	channelId := ChannelIdTournamentQueue
-	if m != nil {
-		channelId = m.ChannelID
+	if cmd.Message != nil {
+		channelId = cmd.Message.ChannelID
 	}
 
 	const fetchTournamentEntriesSql = `

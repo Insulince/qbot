@@ -3,11 +3,10 @@ package qbot
 import (
 	"fmt"
 	"github.com/Insulince/qbot/internal/version"
-	"github.com/bwmarrin/discordgo"
 )
 
 // handleVersion displays the bots current version.
-func (q *QBot) handleVersion(m *discordgo.MessageCreate, _ []string) error {
+func (q *QBot) handleVersion(cmd Cmd) error {
 	v := version.MustGet()
 
 	versionMessage := fmt.Sprintf(""+
@@ -15,7 +14,7 @@ func (q *QBot) handleVersion(m *discordgo.MessageCreate, _ []string) error {
 		"%s\n",
 		v)
 
-	q.mustPost(m.ChannelID, versionMessage)
+	q.mustPost(cmd.Message.ChannelID, versionMessage)
 
 	return nil
 }

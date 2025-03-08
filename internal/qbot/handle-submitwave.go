@@ -2,28 +2,28 @@ package qbot
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"strconv"
 )
 
 // Handle !submitwave <wave>
-func (q *QBot) handleSubmitWave(m *discordgo.MessageCreate, args []string) error {
-	if len(args) != 2 {
-		q.mustPost(m.ChannelID, "Usage: `!submitwave <wave>`")
+func (q *QBot) handleSubmitWave(cmd Cmd) error {
+	if len(cmd.Args) != 1 {
+		q.mustPost(cmd.Message.ChannelID, "Usage: `!submitwave <wave>`")
 		return nil
 	}
 
-	userID := m.Author.ID
-	username := m.Author.Username
-	id := m.Author.ID
+	userID := cmd.Message.Author.ID
+	username := cmd.Message.Author.Username
+	id := cmd.Message.Author.ID
+	wavesStr := cmd.Args[0]
 
-	waves, err := strconv.Atoi(args[1])
+	waves, err := strconv.Atoi(wavesStr)
 	if err != nil {
-		return errors.Wrap(err, "converting wave to int")
+		return errors.Wrapf(err, "converting waves %q to int", wavesStr)
 	}
 	if waves < 1 || waves > 10000 {
-		q.mustPost(m.ChannelID, fmt.Sprintf("<@%s> Please enter a valid wave number between 1 and 10000.", id))
+		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s> Please enter a valid wave number between 1 and 10000.", id))
 		return nil
 	}
 
@@ -34,7 +34,7 @@ FROM tournaments;
 `
 	var tournamentId int
 	if err := q.db.QueryRow(fetchLatestTournamentIdSql).Scan(&tournamentId); err != nil {
-		q.mustPost(m.ChannelID, "Error retrieving leaderboard.")
+		q.mustPost(cmd.Message.ChannelID, "Error retrieving leaderboard.")
 		return errors.Wrap(err, "query row")
 	}
 
@@ -48,10 +48,10 @@ ON CONFLICT (tournament_id, user_id) DO UPDATE SET waves = excluded.waves;
 `
 	_, err = q.db.Exec(insertWaveSql, tournamentId, userID, username, waves)
 	if err != nil {
-		q.mustPost(m.ChannelID, "Error saving your waves.")
+		q.mustPost(cmd.Message.ChannelID, "Error saving your waves.")
 		return errors.Wrap(err, "exec query")
 	}
-	q.mustPost(m.ChannelID, fmt.Sprintf("✅ <@%s> set their waves to **%d**!", id, waves))
+	q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("✅ <@%s> set their waves to **%d**!", id, waves))
 
 	return nil
 }

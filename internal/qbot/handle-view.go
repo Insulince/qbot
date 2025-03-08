@@ -2,12 +2,11 @@ package qbot
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"time"
 )
 
 // handleView displays the current queue state.
-func (q *QBot) handleView(m *discordgo.MessageCreate, _ []string) error {
+func (q *QBot) handleView(cmd Cmd) error {
 	q.queueMutex.Lock()
 	defer q.queueMutex.Unlock()
 
@@ -33,7 +32,7 @@ func (q *QBot) handleView(m *discordgo.MessageCreate, _ []string) error {
 		}
 	}
 
-	q.mustPostWithoutTags(m.ChannelID, msg)
+	q.mustPostWithoutTags(cmd.Message.ChannelID, msg)
 
 	return nil
 }

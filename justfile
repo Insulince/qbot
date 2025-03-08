@@ -26,3 +26,11 @@ repomix:
     repomix {{ root_dir }}
     : Copy the resulting .repomix file to clipboard for ease of sharing with an LLM. This is different from the --copy argument since it copies the file itself, not just the contents.
     powershell Set-Clipboard -Path '{{ root_dir }}/.repomix'
+
+# Recipe compile will compile the entire codebase, which is useful for detecting any compilation errors across the project.
+compile:
+    go build {{ root_dir }}/...
+
+# Recipe test will run all unit tests across the codebase.
+test:
+    go test {{ root_dir }}/...

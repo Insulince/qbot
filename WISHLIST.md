@@ -6,3 +6,5 @@
 - add !clearwave or something to remove yourself from the active tourney leaderboard
 - merge !leaderboard and !history? They serve similar functions, could be combined maybe
 - separate out mod and normal commands in qbot.go
+- setup error handling to also handle when panics occur and route those to the error channel as well.
+- need to ensure that when an error occurs, the bot doesnt just stay silent, but tells the user something went wrong
