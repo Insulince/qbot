@@ -43,7 +43,7 @@ INSERT INTO tournament_entries
     (tournament_id, user_id, username, waves)
 VALUES
     (?, ?, ?, ?)
-ON CONFLICT(user_id) DO UPDATE SET waves = excluded.waves;
+ON CONFLICT (tournament_id, user_id) DO UPDATE SET waves = excluded.waves;
 `
 	_, err = db.Exec(insertWaveSql, tournamentId, userID, username, waves)
 	if err != nil {

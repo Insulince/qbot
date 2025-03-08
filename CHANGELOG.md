@@ -1,12 +1,15 @@
 # CHANGELOG
 
-### v0.6.2 7 March 2025
+### v0.6.3 - 7 March 2025
+- SQL query for inserting tourney entries had an error when checking CONFLICTS. This has been corrected!
+
+### v0.6.2 7 - March 2025
 - `short_name` was being referred to as `shortName` in SQL queries, which is incorrect. This was causing a new tourney to not be created on tourney open.
 
-### v0.6.1 7 March 2025
+### v0.6.1 7 - March 2025
 - `!submitwave` can also be called as `!submitwaves`
 
-### v0.6.0 7 March 2025
+### v0.6.0 7 - March 2025
 - Create `!history` command for viewing historical tournament results
 - Setup automatic tournament creation in sql when a new tourney opens via the scheduler
 - `!leaderboard` will now pull from the latest tourney, to view previous ones use !history
