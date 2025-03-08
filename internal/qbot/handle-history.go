@@ -3,28 +3,28 @@ package qbot
 import (
 	"database/sql"
 	"fmt"
+	"github.com/Insulince/jlib/pkg/jmust"
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
-	"log"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func handleHistory(session *discordgo.Session, message *discordgo.MessageCreate, args []string, db *sql.DB) {
-	if !isModerator(session, message) {
-		return
+func (q *QBot) handleHistory(m *discordgo.MessageCreate, args []string) error {
+	if !q.isModerator(m) {
+		return nil
 	}
 
 	if len(args) < 2 {
-		session.ChannelMessageSend(message.ChannelID, "Usage: `!history <tournament-identifier>`")
-		return
+		q.mustPost(m.ChannelID, "Usage: `!history <tournament-identifier>`")
+		return nil
 	}
 
 	tournamentShortName, err := parseTournamentShortName(args[1])
 	if err != nil {
-		session.ChannelMessageSend(message.ChannelID, fmt.Sprintf("❌ %s", err.Error()))
-		return
+		q.mustPost(m.ChannelID, errors.Wrap(err, "❌ parse tournament identifier").Error())
+		return nil
 	}
 
 	const fetchTournamentSql = `
@@ -36,14 +36,13 @@ WHERE short_name = ?;
 `
 	var tournamentId int64
 	var tournamentName string
-	if err := db.QueryRow(fetchTournamentSql, tournamentShortName).Scan(&tournamentId, &tournamentName); err != nil {
+	if err := q.db.QueryRow(fetchTournamentSql, tournamentShortName).Scan(&tournamentId, &tournamentName); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			session.ChannelMessageSend(message.ChannelID, fmt.Sprintf("_No tournament found for %q_", tournamentShortName))
-			return
+			q.mustPost(m.ChannelID, fmt.Sprintf("_No tournament found for %q_", tournamentShortName))
+			return nil
 		}
-		log.Println("Error retrieving tournament history:", err)
-		session.ChannelMessageSend(message.ChannelID, "Error retrieving tournament history.")
-		return
+		q.mustPost(m.ChannelID, "Error retrieving tournament history.")
+		return errors.Wrap(err, "query row")
 	}
 
 	const fetchTournamentEntriesSql = `
@@ -54,20 +53,22 @@ FROM tournament_entries
 WHERE tournament_id = ?
 ORDER BY waves DESC;
 `
-	tournamentEntriesRows, err := db.Query(fetchTournamentEntriesSql, tournamentId)
+	tournamentEntriesRows, err := q.db.Query(fetchTournamentEntriesSql, tournamentId)
 	if err != nil {
-		log.Println("Error retrieving tournament history:", err)
-		session.ChannelMessageSend(message.ChannelID, "Error retrieving tournament history.")
-		return
+		q.mustPost(m.ChannelID, "Error retrieving tournament entries.")
+		return errors.Wrap(err, "query")
 	}
-	defer tournamentEntriesRows.Close()
+	jmust.MustClose(tournamentEntriesRows)
 
 	leaderboardMsg := fmt.Sprintf("🏆 **Tournament %s Leaderboard** 🏆\n", tournamentName)
 	var entries []string
 	for i := 1; tournamentEntriesRows.Next(); i++ {
 		var userId string
 		var waves int
-		tournamentEntriesRows.Scan(&userId, &waves)
+		if err := tournamentEntriesRows.Scan(&userId, &waves); err != nil {
+			return errors.Wrap(err, "scanning tournament entries rows")
+		}
+
 		entry := fmt.Sprintf("%d. **<@%s>** - Wave %d", i, userId, waves)
 		entries = append(entries, entry)
 	}
@@ -78,12 +79,9 @@ ORDER BY waves DESC;
 	}
 	leaderboardMsg += entriesMsg
 
-	session.ChannelMessageSendComplex(message.ChannelID, &discordgo.MessageSend{
-		Content: leaderboardMsg,
-		AllowedMentions: &discordgo.MessageAllowedMentions{
-			Parse: []discordgo.AllowedMentionType{}, // Prevents pinging
-		},
-	})
+	q.mustPostWithoutTags(m.ChannelID, leaderboardMsg)
+
+	return nil
 }
 
 // Parse user input for !history command
@@ -148,7 +146,7 @@ func parseTournamentShortName(input string) (string, error) {
 			return "", errors.Errorf("Invalid tournament short name: %s", input)
 		}
 	default:
-		return "", fmt.Errorf("Invalid format %q. Use `YYYY-MM-DD`, `MM-DD`, `DD`, or `-N` for past tournaments.", input)
+		return "", fmt.Errorf("invalid format %q, `YYYY-MM-DD`, `MM-DD`, or `DD` expected for past tournaments", input)
 	}
 
 	var err error
@@ -216,15 +214,4 @@ func parseTournamentShortName(input string) (string, error) {
 	}
 
 	return fmt.Sprintf("%04d-%02d-%02d", year, month, day), nil
-}
-
-// Fetches the N-th most recent tournament from the database
-func fetchNthMostRecentTournament(db *sql.DB, offset int) (string, error) {
-	query := "SELECT short_id FROM tournaments ORDER BY start DESC LIMIT 1 OFFSET ?"
-	var tournamentID string
-	err := db.QueryRow(query, -offset-1).Scan(&tournamentID)
-	if err != nil {
-		return "", fmt.Errorf("No tournament found for offset %d", offset)
-	}
-	return tournamentID, nil
 }

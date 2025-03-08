@@ -5,5 +5,3 @@
 - !bcs for battle conditions maybe?
 - add !clearwave or something to remove yourself from the active tourney leaderboard
 - merge !leaderboard and !history? They serve similar functions, could be combined maybe
-- come up with a way to have all "technical" errors get routed to a private channel in the discord to notify me in a more timely and active manner
-- disable Q responding to mentions, its obnoxious

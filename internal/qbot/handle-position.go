@@ -6,13 +6,13 @@ import (
 )
 
 // handlePosition tells a user their position in the queue or if they're active.
-func (q *QBot) handlePosition(s *discordgo.Session, m *discordgo.MessageCreate) {
+func (q *QBot) handlePosition(m *discordgo.MessageCreate, _ []string) error {
 	q.queueMutex.Lock()
 	defer q.queueMutex.Unlock()
 
 	if q.currentUser != nil && q.currentUser.UserID == m.Author.ID {
-		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@%s>, you are currently active.", m.Author.ID))
-		return
+		q.mustPost(m.ChannelID, fmt.Sprintf("<@%s>, you are currently active.", m.Author.ID))
+		return nil
 	}
 
 	position := -1
@@ -24,8 +24,10 @@ func (q *QBot) handlePosition(s *discordgo.Session, m *discordgo.MessageCreate) 
 	}
 
 	if position > 0 {
-		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@%s>, your position in the queue is %d.", m.Author.ID, position))
+		q.mustPost(m.ChannelID, fmt.Sprintf("<@%s>, your position in the queue is %d.", m.Author.ID, position))
 	} else {
-		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@%s>, you are not in the queue.", m.Author.ID))
+		q.mustPost(m.ChannelID, fmt.Sprintf("<@%s>, you are not in the queue.", m.Author.ID))
 	}
+
+	return nil
 }

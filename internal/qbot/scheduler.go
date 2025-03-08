@@ -1,9 +1,8 @@
 package qbot
 
 import (
-	"database/sql"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 	"log"
 	"strings"
 	"time"
@@ -27,37 +26,25 @@ var schedule = map[string]string{
 }
 
 // Function to check the time and send messages
-func startScheduler(session *discordgo.Session) {
+func (q *QBot) startScheduler() error {
 	for {
 		now := time.Now().UTC()
 		key := fmt.Sprintf("%s %02d:%02d", now.Weekday(), now.Hour(), now.Minute())
 
 		if msg, exists := schedule[key]; exists {
 			if (now.Weekday() == time.Saturday || now.Weekday() == time.Wednesday) && now.Hour() == 0 && now.Minute() == 0 {
-				db, err := sql.Open("sqlite", "/var/lib/litefs/qbot.db")
-				if err != nil {
-					log.Println(fmt.Errorf("error opening database: %w", err).Error())
-					return
+				if err := q.createNewTournament(); err != nil {
+					return errors.Wrap(err, "creating new tournament")
 				}
-
-				createNewTournament(session, db)
-
-				db.Close()
 			}
 
-			session.ChannelMessageSend(announcementChannelID, msg)
+			q.mustPost(announcementChannelID, msg)
 			log.Printf("[%s] Scheduled message sent: %q\n", key, msg)
 
 			if (now.Weekday() == time.Sunday || now.Weekday() == time.Thursday) && now.Hour() == 4 && now.Minute() == 0 {
-				db, err := sql.Open("sqlite", "/var/lib/litefs/qbot.db")
-				if err != nil {
-					log.Println(fmt.Errorf("error opening database: %w", err).Error())
-					return
+				if err := q.handleLeaderboard(nil, nil); err != nil {
+					return errors.Wrap(err, "handling leaderboard")
 				}
-
-				handleLeaderboard(session, nil, db)
-
-				db.Close()
 			}
 		}
 
@@ -66,7 +53,7 @@ func startScheduler(session *discordgo.Session) {
 }
 
 // Function to create a new tournament
-func createNewTournament(session *discordgo.Session, db *sql.DB) {
+func (q *QBot) createNewTournament() error {
 	// Generate short_name in yyyy-mm-dd format
 	now := time.Now().UTC()
 	shortName := fmt.Sprintf("%04d-%02d-%02d", now.Year(), now.Month(), now.Day())
@@ -81,11 +68,10 @@ INSERT INTO tournaments
 VALUES
     (?, ?);
 `
-
-	if _, err := db.Exec(newTournamentSql, fullName, shortName); err != nil {
-		log.Println("❌ Error inserting new tournament:", err)
-		return
+	if _, err := q.db.Exec(newTournamentSql, fullName, shortName); err != nil {
+		return errors.Wrap(err, "❌ Error inserting new tournament")
 	}
 
 	log.Println("✅ New tournament created:", fullName)
+	return nil
 }

@@ -1,28 +1,30 @@
 package qbot
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"log"
+	"github.com/pkg/errors"
 	"strconv"
 )
 
 // Handle !submitwave <wave>
-func handleSubmitWave(session *discordgo.Session, message *discordgo.MessageCreate, args []string, db *sql.DB) {
+func (q *QBot) handleSubmitWave(m *discordgo.MessageCreate, args []string) error {
 	if len(args) != 2 {
-		session.ChannelMessageSend(message.ChannelID, "Usage: `!submitwave <wave>`")
-		return
+		q.mustPost(m.ChannelID, "Usage: `!submitwave <wave>`")
+		return nil
 	}
 
-	userID := message.Author.ID
-	username := message.Author.Username
-	id := message.Author.ID
+	userID := m.Author.ID
+	username := m.Author.Username
+	id := m.Author.ID
 
 	waves, err := strconv.Atoi(args[1])
-	if err != nil || waves < 1 || waves > 10000 {
-		session.ChannelMessageSend(message.ChannelID, fmt.Sprintf("<@%s> Please enter a valid wave number between 1 and 10000.", id))
-		return
+	if err != nil {
+		return errors.Wrap(err, "converting wave to int")
+	}
+	if waves < 1 || waves > 10000 {
+		q.mustPost(m.ChannelID, fmt.Sprintf("<@%s> Please enter a valid wave number between 1 and 10000.", id))
+		return nil
 	}
 
 	const fetchLatestTournamentIdSql = `
@@ -31,10 +33,9 @@ SELECT
 FROM tournaments;
 `
 	var tournamentId int
-	if err := db.QueryRow(fetchLatestTournamentIdSql).Scan(&tournamentId); err != nil {
-		log.Println("DB Error:", err)
-		session.ChannelMessageSend(message.ChannelID, "Error retrieving leaderboard.")
-		return
+	if err := q.db.QueryRow(fetchLatestTournamentIdSql).Scan(&tournamentId); err != nil {
+		q.mustPost(m.ChannelID, "Error retrieving leaderboard.")
+		return errors.Wrap(err, "query row")
 	}
 
 	// Update or insert new high score
@@ -45,11 +46,12 @@ VALUES
     (?, ?, ?, ?)
 ON CONFLICT (tournament_id, user_id) DO UPDATE SET waves = excluded.waves;
 `
-	_, err = db.Exec(insertWaveSql, tournamentId, userID, username, waves)
+	_, err = q.db.Exec(insertWaveSql, tournamentId, userID, username, waves)
 	if err != nil {
-		log.Println("DB Error:", err)
-		session.ChannelMessageSend(message.ChannelID, "Error saving your waves.")
-		return
+		q.mustPost(m.ChannelID, "Error saving your waves.")
+		return errors.Wrap(err, "exec query")
 	}
-	session.ChannelMessageSend(message.ChannelID, fmt.Sprintf("✅ <@%s> set their waves to **%d**!", id, waves))
+	q.mustPost(m.ChannelID, fmt.Sprintf("✅ <@%s> set their waves to **%d**!", id, waves))
+
+	return nil
 }

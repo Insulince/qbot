@@ -1,18 +1,22 @@
 package qbot
 
 import (
-	"database/sql"
 	"fmt"
+	"github.com/Insulince/jlib/pkg/jmust"
 	"github.com/bwmarrin/discordgo"
-	"log"
+	"github.com/pkg/errors"
 	"strings"
 )
 
+const (
+	ChannelIdTournamentQueue = "1343112046404833351" // #tournament-queue
+)
+
 // Handle !leaderboard
-func handleLeaderboard(session *discordgo.Session, message *discordgo.MessageCreate, db *sql.DB) {
-	channelId := "1343112046404833351"
-	if message != nil {
-		channelId = message.ChannelID
+func (q *QBot) handleLeaderboard(m *discordgo.MessageCreate, _ []string) error {
+	channelId := ChannelIdTournamentQueue
+	if m != nil {
+		channelId = m.ChannelID
 	}
 
 	const fetchTournamentEntriesSql = `
@@ -23,20 +27,21 @@ FROM tournament_entries
 WHERE tournament_id = (SELECT MAX(id) FROM tournaments)
 ORDER BY waves DESC;
 `
-	rows, err := db.Query(fetchTournamentEntriesSql)
+	rows, err := q.db.Query(fetchTournamentEntriesSql)
 	if err != nil {
-		log.Println("DB Error:", err)
-		session.ChannelMessageSend(channelId, "Error retrieving leaderboard.")
-		return
+		q.mustPost(channelId, "Error retrieving leaderboard.")
+		return errors.Wrap(err, "querying tournaments")
 	}
-	defer rows.Close()
+	defer jmust.MustClose(rows)
 
 	leaderboardMsg := fmt.Sprintf("🏆 **Latest Tournament Leaderboard** 🏆\n")
 	var entries []string
 	for i := 1; rows.Next(); i++ {
 		var userId string
 		var waves int
-		rows.Scan(&userId, &waves)
+		if err := rows.Scan(&userId, &waves); err != nil {
+			return errors.Wrap(err, "scanning fields")
+		}
 		entry := fmt.Sprintf("%d. **<@%s>** - Wave %d", i, userId, waves)
 		entries = append(entries, entry)
 	}
@@ -47,10 +52,7 @@ ORDER BY waves DESC;
 	}
 	leaderboardMsg += entriesMsg
 
-	session.ChannelMessageSendComplex(channelId, &discordgo.MessageSend{
-		Content: leaderboardMsg,
-		AllowedMentions: &discordgo.MessageAllowedMentions{
-			Parse: []discordgo.AllowedMentionType{}, // Prevents pinging
-		},
-	})
+	q.mustPostWithoutTags(channelId, leaderboardMsg)
+
+	return nil
 }

@@ -3,12 +3,47 @@ package qbot
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
+	"log"
 	"strings"
 	"time"
 )
 
+// Send error message to Discord
+func (q *QBot) reportError(err error) {
+	if err == nil {
+		return
+	}
+
+	const errorChannelID = "1342728552705163336" // #q-testing
+
+	// Format error message
+	errorMessage := fmt.Sprintf("🚨 **Error in QBot** 🚨\n%s", err.Error())
+
+	// Truncate message if too long
+	if len(errorMessage) > 2000 {
+		errorMessage = errorMessage[:1985] + "... (truncated)"
+	}
+
+	// Send error message to the private error channel
+	if _, msgErr := q.session.ChannelMessageSend(errorChannelID, errorMessage); msgErr != nil {
+		log.Printf(errors.Wrapf(msgErr, "failed to send error message to Discord (original error: %s)", err).Error())
+	}
+
+	// Also log error to stdout for redundancy
+	log.Println(err)
+}
+
+func (q *QBot) Go(fn func() error) {
+	go func() {
+		if err := fn(); err != nil {
+			q.reportError(err)
+		}
+	}()
+}
+
 // isModerator checks whether the invoking member has a role named "Moderator".
-func isModerator(s *discordgo.Session, m *discordgo.MessageCreate) bool {
+func (q *QBot) isModerator(m *discordgo.MessageCreate) bool {
 	// Must be in a guild and have member info.
 	if m.GuildID == "" || m.Member == nil {
 		return false
@@ -19,11 +54,11 @@ func isModerator(s *discordgo.Session, m *discordgo.MessageCreate) bool {
 	}
 
 	// First try using cached guild data.
-	guild, err := s.State.Guild(m.GuildID)
+	guild, err := q.session.State.Guild(m.GuildID)
 	var roles []*discordgo.Role
 	if err != nil {
 		// Fallback: fetch guild roles.
-		roles, err = s.GuildRoles(m.GuildID)
+		roles, err = q.session.GuildRoles(m.GuildID)
 		if err != nil {
 			return false
 		}
@@ -43,7 +78,7 @@ func isModerator(s *discordgo.Session, m *discordgo.MessageCreate) bool {
 }
 
 // timeoutChecker periodically checks if the active user has timed out or is nearing timeout.
-func (q *QBot) timeoutChecker(s *discordgo.Session) {
+func (q *QBot) timeoutChecker() error {
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 	for range ticker.C {
@@ -64,15 +99,13 @@ func (q *QBot) timeoutChecker(s *discordgo.Session) {
 
 			// Send a warning if within the warning threshold and not yet warned.
 			if !q.currentUser.Warned && elapsed >= allowedTimeout-q.warnThreshold {
-				s.ChannelMessageSend(q.currentUser.ChannelID,
-					fmt.Sprintf("<@%s>, you have two minutes left (%s). Please update your status or use `!moretime` to extend the deadline.", q.currentUser.UserID, phase))
+				q.mustPost(q.currentUser.ChannelID, fmt.Sprintf("<@%s>, you have two minutes left (%s). Please update your status or use `!moretime` to extend the deadline.", q.currentUser.UserID, phase))
 				q.currentUser.Warned = true
 			}
 
 			// Timeout and promote the next user if the allowed timeout is exceeded.
 			if elapsed > allowedTimeout {
-				s.ChannelMessageSend(q.currentUser.ChannelID,
-					fmt.Sprintf("<@%s> timed out (%s). Moving to the next person in the queue.", q.currentUser.UserID, phase))
+				q.mustPost(q.currentUser.ChannelID, fmt.Sprintf("<@%s> timed out (%s). Moving to the next person in the queue.", q.currentUser.UserID, phase))
 				q.currentUser = nil
 				if len(q.queue) > 0 {
 					next := q.queue[0]
@@ -80,10 +113,12 @@ func (q *QBot) timeoutChecker(s *discordgo.Session) {
 					next.AddedAt = time.Now()
 					next.Warned = false
 					q.currentUser = &next
-					s.ChannelMessageSend(next.ChannelID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", next.UserID))
+					q.mustPost(next.ChannelID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", next.UserID))
 				}
 			}
 		}
 		q.queueMutex.Unlock()
 	}
+
+	return nil
 }

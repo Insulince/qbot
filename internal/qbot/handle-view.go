@@ -7,7 +7,7 @@ import (
 )
 
 // handleView displays the current queue state.
-func (q *QBot) handleView(s *discordgo.Session, m *discordgo.MessageCreate) {
+func (q *QBot) handleView(m *discordgo.MessageCreate, _ []string) error {
 	q.queueMutex.Lock()
 	defer q.queueMutex.Unlock()
 
@@ -33,10 +33,7 @@ func (q *QBot) handleView(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 	}
 
-	s.ChannelMessageSendComplex(m.ChannelID, &discordgo.MessageSend{
-		Content: msg,
-		AllowedMentions: &discordgo.MessageAllowedMentions{
-			Parse: []discordgo.AllowedMentionType{}, // Prevents pinging
-		},
-	})
+	q.mustPostWithoutTags(m.ChannelID, msg)
+
+	return nil
 }

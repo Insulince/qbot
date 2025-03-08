@@ -8,16 +8,16 @@ import (
 )
 
 // handleRemove allows a moderator to remove a specific user from the queue.
-func (q *QBot) handleRemove(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if !isModerator(s, m) {
-		s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command. Moderator role required.")
-		return
+func (q *QBot) handleRemove(m *discordgo.MessageCreate, _ []string) error {
+	if !q.isModerator(m) {
+		q.mustPost(m.ChannelID, "You do not have permission to use this command. Moderator role required.")
+		return nil
 	}
 
 	parts := strings.Fields(m.Content)
 	if len(parts) < 2 {
-		s.ChannelMessageSend(m.ChannelID, "Usage: !remove @user")
-		return
+		q.mustPost(m.ChannelID, "Usage: !remove @user")
+		return nil
 	}
 	mention := parts[1]
 	userID := ""
@@ -31,8 +31,8 @@ func (q *QBot) handleRemove(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 	}
 	if userID == "" {
-		s.ChannelMessageSend(m.ChannelID, "Could not parse user mention.")
-		return
+		q.mustPost(m.ChannelID, "Could not parse user mention.")
+		return nil
 	}
 
 	q.queueMutex.Lock()
@@ -42,7 +42,7 @@ func (q *QBot) handleRemove(s *discordgo.Session, m *discordgo.MessageCreate) {
 		q.currentUser = nil
 		removed = true
 	}
-	newQueue := []QueueItem{}
+	var newQueue []QueueItem
 	for _, item := range q.queue {
 		if item.UserID == userID {
 			removed = true
@@ -52,7 +52,7 @@ func (q *QBot) handleRemove(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	q.queue = newQueue
 	if removed {
-		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("User <@%s> has been removed from the queue.", userID))
+		q.mustPost(m.ChannelID, fmt.Sprintf("User <@%s> has been removed from the queue.", userID))
 		// If the active user was removed, promote the next one.
 		if q.currentUser == nil && len(q.queue) > 0 {
 			next := q.queue[0]
@@ -60,9 +60,11 @@ func (q *QBot) handleRemove(s *discordgo.Session, m *discordgo.MessageCreate) {
 			next.AddedAt = time.Now()
 			next.Warned = false
 			q.currentUser = &next
-			s.ChannelMessageSend(next.ChannelID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", next.UserID))
+			q.mustPost(next.ChannelID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", next.UserID))
 		}
 	} else {
-		s.ChannelMessageSend(m.ChannelID, "User not found in the queue.")
+		q.mustPost(m.ChannelID, "User not found in the queue.")
 	}
+
+	return nil
 }

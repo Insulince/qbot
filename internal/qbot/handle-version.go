@@ -7,11 +7,15 @@ import (
 )
 
 // handleVersion displays the bots current version.
-func (q *QBot) handleVersion(s *discordgo.Session, m *discordgo.MessageCreate) {
+func (q *QBot) handleVersion(m *discordgo.MessageCreate, _ []string) error {
 	v := version.MustGet()
+
 	versionMessage := fmt.Sprintf(""+
 		"**Version**\n"+
 		"%s\n",
 		v)
-	s.ChannelMessageSend(m.ChannelID, versionMessage)
+
+	q.mustPost(m.ChannelID, versionMessage)
+
+	return nil
 }

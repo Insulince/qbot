@@ -1,8 +1,10 @@
 package qbot
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"github.com/bwmarrin/discordgo"
+)
 
-func (q *QBot) handleCommands(s *discordgo.Session, m *discordgo.MessageCreate) {
+func (q *QBot) handleCommands(m *discordgo.MessageCreate, _ []string) error {
 	commandsMessage := "" +
 		"\n**Commands:**\n" +
 		"The following are all supported commands. To use these commands, just type them out and send them with no other message content, no need to mention me or add anything else to the message.\n" +
@@ -20,5 +22,8 @@ func (q *QBot) handleCommands(s *discordgo.Session, m *discordgo.MessageCreate) 
 		"`!reset` - Clear the entire queue.\n" +
 		"`!remove @user` - Remove a specific user from the queue.\n" +
 		"`!version` - Display bot version\n"
-	s.ChannelMessageSend(m.ChannelID, commandsMessage)
+
+	q.mustPost(m.ChannelID, commandsMessage)
+
+	return nil
 }

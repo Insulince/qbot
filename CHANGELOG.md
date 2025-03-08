@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### v0.7.0 - 8 March 2025
+- Overhaul error handling and a lot of architectural changes in general.
+- Errors should now be posted to a private discord channel for easier and more timely review.
+
 ### v0.6.3 - 7 March 2025
 - SQL query for inserting tourney entries had an error when checking CONFLICTS. This has been corrected!
 
