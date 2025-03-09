@@ -14,13 +14,16 @@ func (q *QBot) reportError(err error) {
 		return
 	}
 
-	const errorChannelID = "1342728552705163336" // #q-testing
+	const (
+		errorChannelId     = "1342728552705163336" // #q-testing
+		notificationRoleId = "1348155892377321554" // @Q-dev
+	)
 
 	// Format error message
-	errorMessage := fmt.Sprintf("🚨 **Error in Q** 🚨\n%s", err.Error())
+	errorMessage := fmt.Sprintf("🚨 **Error in Q** 🚨\n<@&%s>: %s", notificationRoleId, err.Error())
 
 	// Send error message to the private error channel
-	q.mustPost(errorChannelID, errorMessage)
+	q.mustPost(errorChannelId, errorMessage)
 
 	// Also log error to stdout for redundancy
 	log.Println(err)
