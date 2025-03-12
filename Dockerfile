@@ -32,6 +32,7 @@ WORKDIR /app
 # Copy the built bot binary from the previous stage
 COPY --from=builder /app/bot /app/bot
 COPY --from=builder /app/VERSION.md /app/VERSION.md
+COPY --from=builder /app/assets /app/assets
 
 # Copy the LiteFS config (you’ll need a litefs.yml file in your repo)
 COPY litefs.yml /etc/litefs.yml

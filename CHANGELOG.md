@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v0.7.4 - 12 March 2025
+- memes r funny
+
 ### v0.7.3 - 8 March 2025
 - Setup role mention for error reporting to get my attention quicker.
 
