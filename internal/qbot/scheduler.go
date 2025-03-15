@@ -42,7 +42,7 @@ func (q *QBot) startScheduler() error {
 			log.Printf("[%s] Scheduled message sent: %q\n", key, msg)
 
 			if (now.Weekday() == time.Sunday || now.Weekday() == time.Thursday) && now.Hour() == 4 && now.Minute() == 0 {
-				if err := q.handleLeaderboard(emptyCmd); err != nil {
+				if err := q.handleLeaderboard(emptyCmd, true); err != nil {
 					return errors.Wrap(err, "handling leaderboard")
 				}
 			}

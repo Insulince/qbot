@@ -9,4 +9,4 @@
 - setup error handling to also handle when panics occur and route those to the error channel as well.
 - need to ensure that when an error occurs, the bot doesnt just stay silent, but tells the user something went wrong
 - announcement system? announce when timed things reset? daily missions are released, crates reset, event starts, etc.?
-- add @fool pic to !leaderboard when he is in last lmao
+- add pic to @everyone chats from Q

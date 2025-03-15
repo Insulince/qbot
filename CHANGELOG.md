@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v0.7.5 - 15 March 2025
+- but not too funny
+
 ### v0.7.4 - 12 March 2025
 - memes r funny
 

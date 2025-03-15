@@ -16,7 +16,7 @@ const (
 )
 
 // Handle !leaderboard
-func (q *QBot) handleLeaderboard(cmd Cmd) error {
+func (q *QBot) handleLeaderboard(cmd Cmd, final bool) error {
 	channelId := ChannelIdTournamentQueue
 	if cmd.Message != nil {
 		channelId = cmd.Message.ChannelID
@@ -63,9 +63,11 @@ ORDER BY waves DESC;
 	// Send the leaderboard message first
 	q.mustPostWithoutTags(channelId, leaderboardMsg)
 
-	// If "Fool" is in last place, post the meme
-	if lastPlaceUsername == foolUsername {
-		q.sendFoolMeme(channelId) // Send Fool meme as an attachment
+	if final {
+		// If "Fool" is in last place, post the meme
+		if lastPlaceUsername == foolUsername {
+			q.sendFoolMeme(channelId) // Send Fool meme as an attachment
+		}
 	}
 
 	return nil

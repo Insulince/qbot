@@ -294,7 +294,7 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 		case `!submitwave`, `!submitwaves`:
 			return q.handleSubmitWave(cmd)
 		case `!leaderboard`:
-			return q.handleLeaderboard(cmd)
+			return q.handleLeaderboard(cmd, false)
 		case `!history`:
 			return q.handleHistory(cmd)
 		case `!deverror`:
