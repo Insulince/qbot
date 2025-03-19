@@ -3,14 +3,15 @@ package qbot
 import (
 	"database/sql"
 	"fmt"
-	"github.com/Insulince/jlib/pkg/jmust"
-	"github.com/pkg/errors"
 	"log"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
 	"unicode"
+
+	"github.com/Insulince/jlib/pkg/jmust"
+	"github.com/pkg/errors"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -51,7 +52,7 @@ type QBot struct {
 func New(token string) (*QBot, error) {
 	q := &QBot{
 		enterTimeout:  5 * time.Minute,
-		fullTimeout:   15 * time.Minute,
+		fullTimeout:   30 * time.Minute,
 		warnThreshold: 2 * time.Minute,
 	}
 

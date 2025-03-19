@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v0.7.6 - 19 March 2025
+- enter -> full timeout is now **30 minutes** (up from 15)
+
 ### v0.7.5 - 15 March 2025
 - but not too funny
 
