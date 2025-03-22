@@ -266,6 +266,8 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 
 		if strings.ToUpper(cmd.Command) == cmd.Command {
 			q.mustPost(cmd.Message.ChannelID, "I heard you, no need to shout!")
+		} else {
+			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("not caps: %q != %q", strings.ToUpper(cmd.Command), cmd.Command))
 		}
 
 		// Command routing.
