@@ -265,7 +265,7 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 		}
 
 		if strings.ToUpper(cmd.Command) == cmd.Command {
-			q.mustPost(m.ChannelID, "I heard you, no need to shout!")
+			q.mustPost(cmd.Message.ChannelID, "I heard you, no need to shout!")
 		}
 
 		// Command routing.
@@ -296,7 +296,7 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 			return q.handleRemove(cmd)
 		case `!moretime`, `!extend`:
 			return q.handleMoreTime(cmd)
-		case `!submitwave`, `!submitwaves`:
+		case `!submitwave`, `!submitwaves`, `!wave`, `!waves`:
 			return q.handleSubmitWave(cmd)
 		case `!leaderboard`:
 			return q.handleLeaderboard(cmd, false)
