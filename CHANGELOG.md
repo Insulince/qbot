@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### v0.7.7 - 21 March 2025
+- !q is now a valid way to enter the queue
+- if you put your command in all caps, Q will get mad at you
+
 ### v0.7.6 - 19 March 2025
 - enter -> full timeout is now **30 minutes** (up from 15)
 

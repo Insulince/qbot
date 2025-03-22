@@ -264,9 +264,13 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 			return nil
 		}
 
+		if strings.ToUpper(cmd.Command) == cmd.Command {
+			q.mustPost(m.ChannelID, "I heard you, no need to shout!")
+		}
+
 		// Command routing.
 		switch cmd.Command {
-		case `!queue`, `!enqueue`:
+		case `!queue`, `!q`, `!enqueue`, `!join`:
 			return q.handleQueue(cmd)
 		case `!enter`, `!enterbracket`:
 			return q.handleEnter(cmd)
