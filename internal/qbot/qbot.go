@@ -304,13 +304,6 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 			return q.handleHistory(cmd)
 		case `!deverror`:
 			return q.handleDevError(cmd)
-		case `!loser`:
-			if len(cmd.Args) != 1 {
-				q.mustPost(cmd.Message.ChannelID, "Usage: `!loser <name>`")
-				return nil
-			}
-			q.congratulateLoser(cmd.Message.ChannelID, cmd.Args[0])
-			return nil
 		default:
 			q.mustPost(m.ChannelID, fmt.Sprintf("unknown command (use `!help` for available commands): `%s`", cmd.Command))
 			return nil
