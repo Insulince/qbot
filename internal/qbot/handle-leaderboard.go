@@ -13,7 +13,9 @@ import (
 	"github.com/Insulince/jlib/pkg/jmust"
 	"github.com/bwmarrin/discordgo"
 	"github.com/golang/freetype"
+	"github.com/golang/freetype/truetype"
 	"github.com/pkg/errors"
+	"golang.org/x/image/font"
 )
 
 const (
@@ -117,23 +119,55 @@ func (q *QBot) congratulateLoser(channelID, lastPlaceUsername string) {
 		return
 	}
 
-	// Setup the font context
+	// Calculate text width to right-align it
+	fontSize := 48.0
+	opts := truetype.Options{
+		Size: fontSize,
+		DPI:  72,
+	}
+	face := truetype.NewFace(f, &opts)
+
+	// Get text width for right alignment
+	text := lastPlaceUsername
+	width := font.MeasureString(face, text).Ceil()
+
+	// Position the text in the lower right corner
+	padding := 20 // Padding from the right edge
+	x := bounds.Max.X - width - padding
+	y := bounds.Max.Y - 80 // Position near the bottom
+
+	// Draw text with black outline/shadow effect
+	// First draw the black outline/shadow by drawing the text multiple times with slight offsets
+	outlineC := freetype.NewContext()
+	outlineC.SetDPI(72)
+	outlineC.SetFont(f)
+	outlineC.SetFontSize(fontSize)
+	outlineC.SetClip(bounds)
+	outlineC.SetDst(rgba)
+	outlineC.SetSrc(image.NewUniform(color.RGBA{R: 0, G: 0, B: 0, A: 255})) // Black outline
+
+	// Draw the outline by drawing the text multiple times with slight offsets
+	offsets := []struct{ dx, dy int }{{-2, 0}, {2, 0}, {0, -2}, {0, 2}, {-2, -2}, {2, -2}, {-2, 2}, {2, 2}}
+	for _, offset := range offsets {
+		pt := freetype.Pt(x+offset.dx, y+offset.dy)
+		if _, err = outlineC.DrawString(text, pt); err != nil {
+			q.mustPost(channelID, "❌ Error: Could not draw text outline on image.")
+			return
+		}
+	}
+
+	// Now draw the white text on top
 	c := freetype.NewContext()
 	c.SetDPI(72)
 	c.SetFont(f)
-	c.SetFontSize(24) // Adjust font size as needed
+	c.SetFontSize(fontSize)
 	c.SetClip(bounds)
 	c.SetDst(rgba)
-	c.SetSrc(image.NewUniform(color.RGBA{R: 255, G: 0, B: 0, A: 255})) // Red text
+	c.SetSrc(image.NewUniform(color.RGBA{R: 255, G: 255, B: 255, A: 255})) // White text
 
-	// Position the text - adjust these values based on your template image
-	// These are example values and may need adjustment
-	x := bounds.Max.X / 3
-	y := bounds.Max.Y - 150 // Position near the bottom
-
-	// Draw the text
+	// Draw the main text
 	pt := freetype.Pt(x, y)
-	if _, err = c.DrawString(lastPlaceUsername, pt); err != nil {
+	if _, err = c.DrawString(text, pt); err != nil {
 		q.mustPost(channelID, "❌ Error: Could not draw text on image.")
 		return
 	}

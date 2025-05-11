@@ -3,6 +3,8 @@
 ### v0.7.8 - 11 May 2025
 - Updated the last place meme to be dynamic, showing the username of the last place player regardless of who it is
 - Added image manipulation to overlay the last place player's username directly onto the meme image
+- Improved text rendering with white text and black outline/shadow for better visibility
+- Right-aligned text in the lower right corner of the image for better aesthetics
 - Replaced "wompwomp.png" with "celebrate.png" for the last place celebration image
 
 ### v0.7.7 - 21 March 2025
