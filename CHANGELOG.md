@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### v0.7.8 - 11 May 2025
+- Updated the last place meme to be dynamic, showing the username of the last place player regardless of who it is
+- Added image manipulation to overlay the last place player's username directly onto the meme image
+- Replaced "wompwomp.png" with "celebrate.png" for the last place celebration image
+
 ### v0.7.7 - 21 March 2025
 - !q is now a valid way to enter the queue
 - if you put your command in all caps, Q will get mad at you

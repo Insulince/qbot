@@ -10,3 +10,7 @@
 - need to ensure that when an error occurs, the bot doesnt just stay silent, but tells the user something went wrong
 - announcement system? announce when timed things reset? daily missions are released, crates reset, event starts, etc.?
 - add pic to @everyone chats from Q
+- !roast
+- OWNED image
+- Give warning message when the queue is NOT empty and someone enqueues so that they dont think they can just auto-join like they can 99% of the time
+- command to extract a players progress out of past tournament results. Something like !progress <username>, and it would scan over all tournament entries for that player and output them, maybe with a delta or something

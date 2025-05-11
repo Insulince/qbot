@@ -2,17 +2,22 @@ package qbot
 
 import (
 	"fmt"
-	"github.com/Insulince/jlib/pkg/jmust"
-	"github.com/bwmarrin/discordgo"
-	"github.com/pkg/errors"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/png"
+	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/Insulince/jlib/pkg/jmust"
+	"github.com/bwmarrin/discordgo"
+	"github.com/golang/freetype"
+	"github.com/pkg/errors"
 )
 
 const (
-	ChannelIdTournamentQueue = "1343112046404833351"                      // #tournament-queue
-	FoolMemeURL              = "https://your-image-url.com/fool-meme.jpg" // Replace with actual URL
-	foolUsername             = "hengstler"
+	ChannelIdTournamentQueue = "1343112046404833351" // #tournament-queue
 )
 
 // Handle !leaderboard
@@ -64,31 +69,102 @@ ORDER BY waves DESC;
 	q.mustPostWithoutTags(channelId, leaderboardMsg)
 
 	if final {
-		// If "Fool" is in last place, post the meme
-		if lastPlaceUsername == foolUsername {
-			q.sendFoolMeme(channelId) // Send Fool meme as an attachment
-		}
+		q.congratulateLoser(channelId, lastPlaceUsername)
 	}
 
 	return nil
 }
 
-// Send a local image file
-func (q *QBot) sendFoolMeme(channelID string) {
-	const filePath = "/app/assets/wompwomp.png"
-	file, err := os.Open(filePath)
+// Send a local image file with the username added directly to the image
+func (q *QBot) congratulateLoser(channelID, lastPlaceUsername string) {
+	const templatePath = "/app/assets/celebrate.png"
+	const outputPath = "/tmp/last_place_meme.png"
+
+	// Open the template image
+	templateFile, err := os.Open(templatePath)
 	if err != nil {
-		q.mustPost(channelID, "❌ Error: Could not load image.")
+		q.mustPost(channelID, "❌ Error: Could not load template image.")
 		return
 	}
-	defer file.Close()
+	defer jmust.MustClose(templateFile)
 
-	// Create a message with both text and an image
+	// Decode the PNG image
+	img, err := png.Decode(templateFile)
+	if err != nil {
+		q.mustPost(channelID, "❌ Error: Could not decode template image.")
+		return
+	}
+
+	// Create a new RGBA image
+	bounds := img.Bounds()
+	rgba := image.NewRGBA(bounds)
+	draw.Draw(rgba, bounds, img, bounds.Min, draw.Src)
+
+	// Load font
+	fontBytes, err := ioutil.ReadFile("/app/assets/impact.ttf")
+	if err != nil {
+		// Fallback to system font if custom font not available
+		fontBytes, err = ioutil.ReadFile("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
+		if err != nil {
+			q.mustPost(channelID, "❌ Error: Could not load font.")
+			return
+		}
+	}
+
+	f, err := freetype.ParseFont(fontBytes)
+	if err != nil {
+		q.mustPost(channelID, "❌ Error: Could not parse font.")
+		return
+	}
+
+	// Setup the font context
+	c := freetype.NewContext()
+	c.SetDPI(72)
+	c.SetFont(f)
+	c.SetFontSize(24) // Adjust font size as needed
+	c.SetClip(bounds)
+	c.SetDst(rgba)
+	c.SetSrc(image.NewUniform(color.RGBA{R: 255, G: 0, B: 0, A: 255})) // Red text
+
+	// Position the text - adjust these values based on your template image
+	// These are example values and may need adjustment
+	x := bounds.Max.X / 3
+	y := bounds.Max.Y - 150 // Position near the bottom
+
+	// Draw the text
+	pt := freetype.Pt(x, y)
+	if _, err = c.DrawString(lastPlaceUsername, pt); err != nil {
+		q.mustPost(channelID, "❌ Error: Could not draw text on image.")
+		return
+	}
+
+	// Save the modified image
+	outputFile, err := os.Create(outputPath)
+	if err != nil {
+		q.mustPost(channelID, "❌ Error: Could not create output file.")
+		return
+	}
+
+	if err := png.Encode(outputFile, rgba); err != nil {
+		q.mustPost(channelID, "❌ Error: Could not encode output image.")
+		return
+	}
+
+	// Reopen the file for reading
+	jmust.MustClose(outputFile)
+	file, err := os.Open(outputPath)
+	if err != nil {
+		q.mustPost(channelID, "❌ Error: Could not open modified image.")
+		return
+	}
+	defer jmust.MustClose(file)
+
+	// Create a message with the modified image
 	message := &discordgo.MessageSend{
-		Content: "😂 **Congrats Fool!** 😂",
+		Content: fmt.Sprintf("😂 **Congrats %s!** 😂", lastPlaceUsername),
 		Files: []*discordgo.File{
 			{
-				Name:   "wompwomp.png",
+				Name:   "last_place_meme.png",
 				Reader: file,
 			},
 		},
@@ -98,5 +174,11 @@ func (q *QBot) sendFoolMeme(channelID string) {
 	_, err = q.session.ChannelMessageSendComplex(channelID, message)
 	if err != nil {
 		q.mustPost(channelID, "❌ Error: Failed to send image.")
+	}
+
+	// Clean up the temporary file
+	if err := os.Remove(outputPath); err != nil {
+		q.mustPost(channelID, fmt.Sprintf("❌ Error: Failed to delete temporary image from %q.", outputPath))
+		return
 	}
 }

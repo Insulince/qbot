@@ -1,1 +1,1 @@
-v0.7.7-shout
+v0.7.8-dynamic-meme

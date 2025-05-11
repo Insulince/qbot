@@ -1,10 +1,11 @@
 package qbot
 
 import (
-	"github.com/bwmarrin/discordgo"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_interpretMessage(t *testing.T) {

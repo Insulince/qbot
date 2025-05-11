@@ -34,7 +34,7 @@ COPY --from=builder /app/bot /app/bot
 COPY --from=builder /app/VERSION.md /app/VERSION.md
 COPY --from=builder /app/assets /app/assets
 
-# Copy the LiteFS config (you’ll need a litefs.yml file in your repo)
+# Copy the LiteFS config
 COPY litefs.yml /etc/litefs.yml
 
 # Copy schema and entrypoint script

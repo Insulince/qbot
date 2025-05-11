@@ -5,8 +5,10 @@ go 1.24
 require (
 	github.com/Insulince/jlib v0.0.0-20240925201944-1835938c7a4b
 	github.com/bwmarrin/discordgo v0.28.1
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.10.0
+	golang.org/x/image v0.27.0
 	modernc.org/sqlite v1.36.0
 )
 

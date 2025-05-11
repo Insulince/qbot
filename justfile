@@ -34,3 +34,9 @@ compile:
 # Recipe test will run all unit tests across the codebase.
 test:
     go test {{ root_dir }}/...
+
+# Recipe ssh will ssh into the qbot app on fly.io.
+ssh:
+    echo For running SQL queries do:
+    echo sqlite3 /var/lib/litefs/qbot.db
+    fly ssh console -a qbot
