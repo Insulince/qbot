@@ -2,10 +2,14 @@ package qbot
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"log"
+	"os"
 	"strings"
 	"time"
+
+	"github.com/Insulince/jlib/pkg/jmust"
+	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 )
 
 var announcementChannelID = "1343112046404833351" // #tournament-queue
@@ -38,7 +42,10 @@ func (q *QBot) startScheduler() error {
 				}
 			}
 
-			q.mustPost(announcementChannelID, msg)
+			err := q.announceMessage(msg)
+			if err != nil {
+				return errors.Wrap(err, "announce message")
+			}
 			log.Printf("[%s] Scheduled message sent: %q\n", key, msg)
 
 			if (now.Weekday() == time.Sunday || now.Weekday() == time.Thursday) && now.Hour() == 4 && now.Minute() == 0 {
@@ -50,6 +57,36 @@ func (q *QBot) startScheduler() error {
 
 		time.Sleep(60 * time.Second) // Check every minute
 	}
+}
+
+func (q *QBot) announceMessage(msg string) error {
+	const everyonePath = "/app/assets/everyone.png"
+
+	file, err := os.Open(everyonePath)
+	if err != nil {
+		q.mustPost(announcementChannelID, "❌ Error: Could not open everyone image.")
+		return errors.Wrapf(err, "open everyone image %q", everyonePath)
+	}
+	defer jmust.MustClose(file)
+
+	// Create a message with the modified image
+	message := &discordgo.MessageSend{
+		Content: msg,
+		Files: []*discordgo.File{
+			{
+				Name:   "everyone.png",
+				Reader: file,
+			},
+		},
+	}
+
+	// Send the message with the image
+	if _, err = q.session.ChannelMessageSendComplex(announcementChannelID, message); err != nil {
+		q.mustPost(announcementChannelID, "❌ Error: Failed to send announcement message and image.")
+		return errors.Wrapf(err, "send announcement message and image")
+	}
+
+	return nil
 }
 
 // Function to create a new tournament

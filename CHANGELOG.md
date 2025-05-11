@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v0.7.10 - 11 May 2025
+- @everyone announcements now come with an image.
+
 ### v0.7.9 - 11 May 2025
 - Freaking !owned.
 
