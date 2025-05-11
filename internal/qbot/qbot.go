@@ -300,6 +300,8 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 			return q.handleSubmitWave(cmd)
 		case `!leaderboard`, `!lb`:
 			return q.handleLeaderboard(cmd, false)
+		case `!owned`:
+			return q.handleOwned(cmd)
 		case `!history`:
 			return q.handleHistory(cmd)
 		case `!deverror`:

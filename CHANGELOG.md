@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v0.7.9 - 11 May 2025
+- Freaking !owned.
+
 ### v0.7.8 - 11 May 2025
 - Updated the last place meme to be dynamic, showing the username of the last place player regardless of who it is
 - Added image manipulation to overlay the last place player's username directly onto the meme image
