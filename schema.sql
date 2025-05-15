@@ -17,4 +17,4 @@ CREATE TABLE IF NOT EXISTS tournament_entries (
 
 
 -- Migrated tournament_entries to support display_name field.
-ALTER TABLE tournament_entries ADD COLUMN display_name TEXT NOT NULL DEFAULT 'MISSING';
+-- ALTER TABLE tournament_entries ADD COLUMN display_name TEXT NOT NULL DEFAULT 'MISSING';
