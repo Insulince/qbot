@@ -2,8 +2,9 @@ package qbot
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 // Handle !submitwave <wave>
@@ -17,6 +18,10 @@ func (q *QBot) handleSubmitWave(cmd Cmd) error {
 	username := cmd.Message.Author.Username
 	id := cmd.Message.Author.ID
 	wavesStr := cmd.Args[0]
+	displayName, err := q.GetDisplayName(cmd.Message)
+	if err != nil {
+		return errors.Wrap(err, "getting display name")
+	}
 
 	waves, err := strconv.Atoi(wavesStr)
 	if err != nil {
@@ -41,12 +46,12 @@ FROM tournaments;
 	// Update or insert new high score
 	insertWaveSql := `
 INSERT INTO tournament_entries
-    (tournament_id, user_id, username, waves)
+    (tournament_id, user_id, username, waves, display_name)
 VALUES
-    (?, ?, ?, ?)
+    (?, ?, ?, ?, ?)
 ON CONFLICT (tournament_id, user_id) DO UPDATE SET waves = excluded.waves;
 `
-	_, err = q.db.Exec(insertWaveSql, tournamentId, userID, username, waves)
+	_, err = q.db.Exec(insertWaveSql, tournamentId, userID, username, waves, displayName)
 	if err != nil {
 		q.mustPost(cmd.Message.ChannelID, "Error saving your waves.")
 		return errors.Wrap(err, "exec query")

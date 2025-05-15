@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### v0.8.0 - 15 May 2025
+- Display names are used instead of usernames in the loser meme.
+- Add some dev utilities
+
 ### v0.7.10 - 11 May 2025
 - @everyone announcements now come with an image.
 

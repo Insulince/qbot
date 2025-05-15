@@ -304,8 +304,8 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 			return q.handleOwned(cmd)
 		case `!history`:
 			return q.handleHistory(cmd)
-		case `!deverror`:
-			return q.handleDevError(cmd)
+		case `!dev`:
+			return q.handleDev(cmd)
 		default:
 			q.mustPost(m.ChannelID, fmt.Sprintf("unknown command (use `!help` for available commands): `%s`", cmd.Command))
 			return nil

@@ -33,7 +33,8 @@ func (q *QBot) handleLeaderboard(cmd Cmd, final bool) error {
 SELECT
     user_id,
     username,
-    waves
+    waves,
+    display_name
 FROM tournament_entries
 WHERE tournament_id = (SELECT MAX(id) FROM tournaments)
 ORDER BY waves DESC;
@@ -47,18 +48,19 @@ ORDER BY waves DESC;
 
 	leaderboardMsg := fmt.Sprintf("🏆 **Latest Tournament Leaderboard** 🏆\n")
 	var entries []string
-	var lastPlaceUsername string
+	var lastPlaceDisplayName string
 	for i := 1; rows.Next(); i++ {
 		var userId string
 		var username string
 		var waves int
-		if err := rows.Scan(&userId, &username, &waves); err != nil {
+		var displayName string
+		if err := rows.Scan(&userId, &username, &waves, &displayName); err != nil {
 			return errors.Wrap(err, "scanning fields")
 		}
 		entry := fmt.Sprintf("%d. **<@%s>** - Wave %d", i, userId, waves)
 		entries = append(entries, entry)
 
-		lastPlaceUsername = username // Keep track of the last user
+		lastPlaceDisplayName = displayName // Keep track of the last user
 	}
 
 	entriesMsg := "_No entries yet._"
@@ -71,14 +73,14 @@ ORDER BY waves DESC;
 	q.mustPostWithoutTags(channelId, leaderboardMsg)
 
 	if final {
-		q.congratulateLoser(channelId, lastPlaceUsername)
+		q.congratulateLoser(channelId, lastPlaceDisplayName)
 	}
 
 	return nil
 }
 
 // Send a local image file with the username added directly to the image
-func (q *QBot) congratulateLoser(channelID, lastPlaceUsername string) {
+func (q *QBot) congratulateLoser(channelID, lastPlaceDisplayName string) {
 	const templatePath = "/app/assets/celebrate.png"
 	const outputPath = "/tmp/last_place_meme.png"
 
@@ -128,7 +130,7 @@ func (q *QBot) congratulateLoser(channelID, lastPlaceUsername string) {
 	face := truetype.NewFace(f, &opts)
 
 	// Get text width for right alignment
-	text := lastPlaceUsername
+	text := lastPlaceDisplayName
 	width := font.MeasureString(face, text).Ceil()
 
 	// Position the text in the lower right corner
@@ -195,7 +197,7 @@ func (q *QBot) congratulateLoser(channelID, lastPlaceUsername string) {
 
 	// Create a message with the modified image
 	message := &discordgo.MessageSend{
-		Content: fmt.Sprintf("😂 **Congrats %s!** 😂", lastPlaceUsername),
+		Content: fmt.Sprintf("😂 **Congrats %s!** 😂", lastPlaceDisplayName),
 		Files: []*discordgo.File{
 			{
 				Name:   "last_place_meme.png",

@@ -3,6 +3,8 @@ package qbot
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
+
 	"log"
 	"strings"
 	"time"
@@ -116,4 +118,29 @@ func (q *QBot) timeoutChecker() error {
 	}
 
 	return nil
+}
+
+func (q *QBot) GetDisplayName(msg *discordgo.MessageCreate) (string, error) {
+	if msg.GuildID == "" {
+		// Not in a guild, only global/username available
+		if msg.Author.GlobalName != "" {
+			return msg.Author.GlobalName, nil
+		}
+		return msg.Author.Username, nil
+	}
+
+	member, err := q.session.GuildMember(msg.GuildID, msg.Author.ID)
+	if err != nil {
+		return "", errors.Wrap(err, "get guild member")
+	}
+
+	if member.Nick != "" {
+		return member.Nick, nil
+	}
+
+	if member.User.GlobalName != "" {
+		return member.User.GlobalName, nil
+	}
+
+	return member.User.Username, nil
 }
