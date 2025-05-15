@@ -3,12 +3,30 @@ package qbot
 import (
 	"database/sql"
 	"fmt"
-	"github.com/Insulince/jlib/pkg/jmust"
-	"github.com/pkg/errors"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Insulince/jlib/pkg/jmust"
+	"github.com/pkg/errors"
 )
+
+/*
+SELECT
+	id,
+	name
+FROM tournaments
+WHERE short_name = "2025-05-14";
+
+23|14 MAY 2025
+
+SELECT
+	user_id,
+	waves
+FROM tournament_entries
+WHERE tournament_id = 23
+ORDER BY waves DESC;
+*/
 
 func (q *QBot) handleHistory(cmd Cmd) error {
 	if !q.isModerator(cmd.Message) {
@@ -58,7 +76,7 @@ ORDER BY waves DESC;
 		q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament entries.")
 		return errors.Wrap(err, "query")
 	}
-	jmust.MustClose(tournamentEntriesRows)
+	defer jmust.MustClose(tournamentEntriesRows)
 
 	leaderboardMsg := fmt.Sprintf("🏆 **Tournament %s Leaderboard** 🏆\n", tournamentName)
 	var entries []string
