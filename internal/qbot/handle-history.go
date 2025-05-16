@@ -35,16 +35,15 @@ func (q *QBot) handleHistory(cmd Cmd) error {
 
 func (q *QBot) getTourneyList(cmd Cmd) error {
 	const (
-		defaultLimit = 10
-		maxLimit     = 30
-
+		defaultLimit  = 10
+		maxLimit      = 30
 		defaultOffset = 0
 		maxOffset     = 50000 // 480 years worth of tourneys, should get the job done.
 	)
 	limit := defaultLimit
 	offset := defaultOffset
 
-	// Parse limit from user args, if given
+	// Parse limit and offset from user args
 	if len(cmd.Args) >= 2 {
 		userLimitStr := cmd.Args[1]
 		userLimit, err := strconv.Atoi(userLimitStr)
@@ -55,9 +54,9 @@ func (q *QBot) getTourneyList(cmd Cmd) error {
 		limit = userLimit
 	}
 	if len(cmd.Args) == 3 {
-		userOffsetStr := cmd.Args[1]
+		userOffsetStr := cmd.Args[2]
 		userOffset, err := strconv.Atoi(userOffsetStr)
-		if err != nil || userOffset <= 0 {
+		if err != nil || userOffset < 0 || userOffset > maxOffset {
 			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("Invalid offset `%s`. Please use an integer between 0 and %d.", userOffsetStr, maxOffset))
 			return errors.Wrapf(err, "parsing offset %q", userOffsetStr)
 		}
@@ -92,7 +91,30 @@ OFFSET ?;
 	}
 	defer jmust.MustClose(rows)
 
-	var lines []string
+	// Table column widths (adjust as needed)
+	const (
+		dateColWidth      = 12
+		shortNameColWidth = 12
+		winnerColWidth    = 20 // winner mention can be long
+		wavesColWidth     = 7
+		entrantsColWidth  = 8
+		avgWaveColWidth   = 10
+	)
+
+	// Header and divider
+	header := fmt.Sprintf(
+		"%-*s %-*s %-*s %*s %*s %*s",
+		dateColWidth, "Date",
+		shortNameColWidth, "Short Name",
+		winnerColWidth, "Winner",
+		wavesColWidth, "Waves",
+		entrantsColWidth, "Entrants",
+		avgWaveColWidth, "Avg Wave",
+	)
+	divider := strings.Repeat("-", len(header))
+	lines := []string{header, divider}
+
+	rowCount := 0
 	for rows.Next() {
 		var id int64
 		var name, shortName string
@@ -113,14 +135,22 @@ WHERE tournament_id = ?;
 		var entrants int
 		var maxWaves sql.NullInt64
 		var avgWaves sql.NullFloat64
-		if err := q.db.QueryRow(statsSql, id).Scan(&entrants, &maxWaves, &avgWaves); err != nil {
-			lines = append(lines, fmt.Sprintf("• **%s** (`%s`) - _No entrants_", name, shortName))
+		if err := q.db.QueryRow(statsSql, id).Scan(&entrants, &maxWaves, &avgWaves); err != nil || entrants == 0 {
+			lines = append(lines, fmt.Sprintf("%-*s %-*s %-*s %*s %*s %*s",
+				dateColWidth, name,
+				shortNameColWidth, shortName,
+				winnerColWidth, "None",
+				wavesColWidth, "-",
+				entrantsColWidth, "0",
+				avgWaveColWidth, "-",
+			))
+			rowCount++
 			continue
 		}
 
-		// Query for winner display name
-		winnerName := "_No winner_"
-		winnerWaveCount := 0
+		// Query for winner user_id (for Discord mention)
+		winnerName := "None"
+		winnerWaveCount := "-"
 		if maxWaves.Valid && entrants > 0 {
 			const winnerSql = `
 SELECT user_id
@@ -130,23 +160,30 @@ LIMIT 1;
 `
 			var userId string
 			err := q.db.QueryRow(winnerSql, id, maxWaves.Int64).Scan(&userId)
-			if err != nil {
-				q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament winner.")
-				return errors.Wrap(err, "querying tournament winner")
+			if err == nil && userId != "" {
+				winnerName = fmt.Sprintf("<@%s>", userId)
+				winnerWaveCount = fmt.Sprintf("%d", maxWaves.Int64)
 			}
-			winnerName = fmt.Sprintf("<@%s>", userId)
-			winnerWaveCount = int(maxWaves.Int64)
 		}
 
-		avgWaveText := "_N/A_"
+		avgWaveText := "-"
 		if avgWaves.Valid {
 			avgWaveText = fmt.Sprintf("%.2f", avgWaves.Float64)
 		}
 
-		line := fmt.Sprintf("• **%s** (`%s`) — Winner: **%s** (`%d`) | Entrants: `%d` | Avg Wave: `%s`", name, shortName, winnerName, winnerWaveCount, entrants, avgWaveText)
-		lines = append(lines, line)
+		// Add row
+		lines = append(lines, fmt.Sprintf(
+			"%-*s %-*s %-*s %*s %*d %*s",
+			dateColWidth, name,
+			shortNameColWidth, shortName,
+			winnerColWidth, winnerName,
+			wavesColWidth, winnerWaveCount,
+			entrantsColWidth, entrants,
+			avgWaveColWidth, avgWaveText,
+		))
+		rowCount++
 	}
-	if len(lines) == 0 {
+	if rowCount == 0 {
 		q.mustPost(cmd.Message.ChannelID, "_No tournaments found._")
 		return nil
 	}
@@ -155,13 +192,14 @@ LIMIT 1;
 	if more < 0 {
 		more = 0
 	}
-
 	moreMsg := ""
 	if more > 0 {
-		moreMsg = fmt.Sprintf("\n_... %d more tournaments not shown..._", more)
+		moreMsg = fmt.Sprintf("_... %d more tournaments not shown..._", more)
 	}
 
-	msg := fmt.Sprintf("📋 ** %d Tournaments (offset %d):**\n%s%s\n\n_Use `!history <YYYY-MM-DD>` to view results for a specific tournament._", len(lines), offset, strings.Join(lines, "\n"), moreMsg)
+	// Put it all together in a code block
+	table := strings.Join(lines, "\n")
+	msg := fmt.Sprintf("📋 **%d Tournaments (offset %d):**\n```%s\n```\n%s\n\n_Use `!history <YYYY-MM-DD>` to view results for a specific tournament._", rowCount, offset, table, moreMsg)
 
 	q.mustPostWithoutTags(cmd.Message.ChannelID, msg)
 	return nil
