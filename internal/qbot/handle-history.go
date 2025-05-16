@@ -27,6 +27,7 @@ func (q *QBot) handleHistory(cmd Cmd) error {
 		if err != nil {
 			return errors.Wrap(err, "getting tourney history")
 		}
+		return nil
 	}
 	// If it can be parsed, then the arg is a limit, fetch a list of tourneys
 	if err := q.getTourneyList(cmd); err != nil {
