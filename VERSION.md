@@ -1,1 +1,1 @@
-v0.8.1-history
+v0.8.2-history-stats

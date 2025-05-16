@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### v0.8.2 - 16 May 2025
+- `!history list` now supports offset
+- `!history list` now returns detailed stats about each tourney, such as the winner, winner's waves, average wave count, and number of entrants
+
 ### v0.8.1 - 16 May 2025
 - Add `list` mode to the `!history` command
 

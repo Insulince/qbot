@@ -13,7 +13,7 @@ import (
 
 func (q *QBot) handleHistory(cmd Cmd) error {
 	if len(cmd.Args) < 1 {
-		q.mustPost(cmd.Message.ChannelID, "Usage: `!history <tournament-identifier>|list [limit]`")
+		q.mustPost(cmd.Message.ChannelID, "Usage: `!history <tournament-identifier>|list [limit] [offset]`")
 		return nil
 	}
 
@@ -37,18 +37,31 @@ func (q *QBot) getTourneyList(cmd Cmd) error {
 	const (
 		defaultLimit = 10
 		maxLimit     = 30
+
+		defaultOffset = 0
+		maxOffset     = 50000 // 480 years worth of tourneys, should get the job done.
 	)
 	limit := defaultLimit
+	offset := defaultOffset
 
 	// Parse limit from user args, if given
-	if len(cmd.Args) == 2 {
+	if len(cmd.Args) >= 2 {
 		userLimitStr := cmd.Args[1]
 		userLimit, err := strconv.Atoi(userLimitStr)
-		if err != nil || userLimit <= 0 {
+		if err != nil || userLimit <= 0 || userLimit > maxLimit {
 			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("Invalid limit `%s`. Please use a positive integer between 1 and %d.", userLimitStr, maxLimit))
 			return errors.Wrapf(err, "parsing limit %q", userLimitStr)
 		}
 		limit = userLimit
+	}
+	if len(cmd.Args) == 3 {
+		userOffsetStr := cmd.Args[1]
+		userOffset, err := strconv.Atoi(userOffsetStr)
+		if err != nil || userOffset <= 0 {
+			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("Invalid offset `%s`. Please use an integer between 0 and %d.", userOffsetStr, maxOffset))
+			return errors.Wrapf(err, "parsing offset %q", userOffsetStr)
+		}
+		offset = userOffset
 	}
 
 	// Get total count of tournaments for "more" count
@@ -69,9 +82,10 @@ SELECT
 	short_name
 FROM tournaments
 ORDER BY id DESC
-LIMIT ?;
+LIMIT ?
+OFFSET ?;
 `
-	rows, err := q.db.Query(fetchLatestTournamentsSql, limit)
+	rows, err := q.db.Query(fetchLatestTournamentsSql, limit, offset)
 	if err != nil {
 		q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament list.")
 		return errors.Wrap(err, "query tournaments list")
@@ -86,24 +100,68 @@ LIMIT ?;
 			q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament list.")
 			return errors.Wrap(err, "scanning tournament list")
 		}
-		lines = append(lines, fmt.Sprintf("• **%s** (`%s`)", name, shortName))
+
+		// Query for entrants, winner, avg wave
+		const statsSql = `
+SELECT
+	COUNT(*) as entrants,
+	MAX(waves) as max_waves,
+	AVG(waves) as avg_waves
+FROM tournament_entries
+WHERE tournament_id = ?;
+`
+		var entrants int
+		var maxWaves sql.NullInt64
+		var avgWaves sql.NullFloat64
+		if err := q.db.QueryRow(statsSql, id).Scan(&entrants, &maxWaves, &avgWaves); err != nil {
+			lines = append(lines, fmt.Sprintf("• **%s** (`%s`) - _No entrants_", name, shortName))
+			continue
+		}
+
+		// Query for winner display name
+		winnerName := "_No winner_"
+		winnerWaveCount := 0
+		if maxWaves.Valid && entrants > 0 {
+			const winnerSql = `
+SELECT user_id
+FROM tournament_entries
+WHERE tournament_id = ? AND waves = ?
+LIMIT 1;
+`
+			var userId string
+			err := q.db.QueryRow(winnerSql, id, maxWaves.Int64).Scan(&userId)
+			if err != nil {
+				q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament winner.")
+				return errors.Wrap(err, "querying tournament winner")
+			}
+			winnerName = fmt.Sprintf("<@%s>", userId)
+			winnerWaveCount = int(maxWaves.Int64)
+		}
+
+		avgWaveText := "_N/A_"
+		if avgWaves.Valid {
+			avgWaveText = fmt.Sprintf("%.2f", avgWaves.Float64)
+		}
+
+		line := fmt.Sprintf("• **%s** (`%s`) — Winner: **%s** (`%d`) | Entrants: `%d` | Avg Wave: `%s`", name, shortName, winnerName, winnerWaveCount, entrants, avgWaveText)
+		lines = append(lines, line)
 	}
 	if len(lines) == 0 {
 		q.mustPost(cmd.Message.ChannelID, "_No tournaments found._")
 		return nil
 	}
 
-	more := totalCount - limit
+	more := totalCount - limit - offset
 	if more < 0 {
 		more = 0
 	}
 
 	moreMsg := ""
 	if more > 0 {
-		moreMsg = fmt.Sprintf("\n\n_... %d more tournaments not shown..._", more)
+		moreMsg = fmt.Sprintf("\n_... %d more tournaments not shown..._", more)
 	}
 
-	msg := fmt.Sprintf("📋 **Latest %d Tournaments:**\n%s%s\n\n_Use `!history <tourney_name>` to view results for a specific tournament._", len(lines), strings.Join(lines, "\n"), moreMsg)
+	msg := fmt.Sprintf("📋 ** %d Tournaments (offset %d):**\n%s%s\n\n_Use `!history <YYYY-MM-DD>` to view results for a specific tournament._", len(lines), offset, strings.Join(lines, "\n"), moreMsg)
 
 	q.mustPost(cmd.Message.ChannelID, msg)
 	return nil
