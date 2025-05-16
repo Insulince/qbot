@@ -3,6 +3,7 @@ package qbot
 import (
 	"database/sql"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -140,10 +141,10 @@ LIMIT 1;
 
 		avgWaveText := "_N/A_"
 		if avgWaves.Valid {
-			avgWaveText = fmt.Sprintf("%.2f", avgWaves.Float64)
+			avgWaveText = fmt.Sprintf("%d", int(math.Round(avgWaves.Float64)))
 		}
 
-		line := fmt.Sprintf("• **%s** (`%s`) — Entrants: `%2d` | Avg Wave: `%7s` | Winner: **%s** (`%4d`)", name, shortName, entrants, avgWaveText, winnerName, winnerWaveCount)
+		line := fmt.Sprintf("• **%s** (`%s`) — Entrants: `%2d` (Avg `%4s`) | Winner: **%s** (`%4d`)", name, shortName, entrants, avgWaveText, winnerName, winnerWaveCount)
 		lines = append(lines, line)
 	}
 	if len(lines) == 0 {
