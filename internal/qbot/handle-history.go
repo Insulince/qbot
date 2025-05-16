@@ -163,7 +163,7 @@ LIMIT 1;
 
 	msg := fmt.Sprintf("📋 ** %d Tournaments (offset %d):**\n%s%s\n\n_Use `!history <YYYY-MM-DD>` to view results for a specific tournament._", len(lines), offset, strings.Join(lines, "\n"), moreMsg)
 
-	q.mustPost(cmd.Message.ChannelID, msg)
+	q.mustPostWithoutTags(cmd.Message.ChannelID, msg)
 	return nil
 }
 
