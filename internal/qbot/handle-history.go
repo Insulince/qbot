@@ -56,7 +56,7 @@ func (q *QBot) getTourneyList(cmd Cmd) error {
 		limit = userLimit
 	}
 	if len(cmd.Args) == 3 {
-		userOffsetStr := cmd.Args[1]
+		userOffsetStr := cmd.Args[2]
 		userOffset, err := strconv.Atoi(userOffsetStr)
 		if err != nil || userOffset <= 0 {
 			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("Invalid offset `%s`. Please use an integer between 0 and %d.", userOffsetStr, maxOffset))

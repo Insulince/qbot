@@ -13,3 +13,4 @@
 - Give warning message when the queue is NOT empty and someone enqueues so that they dont think they can just auto-join like they can 99% of the time
 - command to extract a players progress out of past tournament results. Something like !progress <username>, and it would scan over all tournament entries for that player and output them, maybe with a delta or something
 - DB backups
+- Add specific `help` sub commands to each command
