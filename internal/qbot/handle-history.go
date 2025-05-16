@@ -11,34 +11,105 @@ import (
 	"github.com/pkg/errors"
 )
 
-/*
+func (q *QBot) handleHistory(cmd Cmd) error {
+	if len(cmd.Args) < 1 {
+		q.mustPost(cmd.Message.ChannelID, "Usage: `!history <tournament-identifier>|list [limit]`")
+		return nil
+	}
+
+	switch arg1 := cmd.Args[0]; arg1 {
+	case "list":
+		if err := q.getTourneyList(cmd); err != nil {
+			return errors.Wrap(err, "getting tourney list")
+		}
+	default:
+		givenShortName := arg1
+		err := q.getTourneysHistory(cmd, givenShortName)
+		if err != nil {
+			return errors.Wrap(err, "getting tourney history")
+		}
+	}
+
+	return nil
+}
+
+func (q *QBot) getTourneyList(cmd Cmd) error {
+	const (
+		defaultLimit = 10
+		maxLimit     = 30
+	)
+	limit := defaultLimit
+
+	// Parse limit from user args, if given
+	if len(cmd.Args) == 2 {
+		userLimitStr := cmd.Args[1]
+		userLimit, err := strconv.Atoi(userLimitStr)
+		if err != nil || userLimit <= 0 {
+			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("Invalid limit `%s`. Please use a positive integer between 1 and %d.", userLimitStr, maxLimit))
+			return errors.Wrapf(err, "parsing limit %q", userLimitStr)
+		}
+		limit = userLimit
+	}
+
+	// Get total count of tournaments for "more" count
+	const countSql = `
+SELECT COUNT(*)
+FROM tournaments;
+`
+	var totalCount int
+	if err := q.db.QueryRow(countSql).Scan(&totalCount); err != nil {
+		q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament count.")
+		return errors.Wrap(err, "count tournaments")
+	}
+
+	const fetchLatestTournamentsSql = `
 SELECT
 	id,
-	name
+	name,
+	short_name
 FROM tournaments
-WHERE short_name = "2025-05-14";
+ORDER BY id DESC
+LIMIT ?;
+`
+	rows, err := q.db.Query(fetchLatestTournamentsSql, limit)
+	if err != nil {
+		q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament list.")
+		return errors.Wrap(err, "query tournaments list")
+	}
+	defer jmust.MustClose(rows)
 
-23|14 MAY 2025
-
-SELECT
-	user_id,
-	waves
-FROM tournament_entries
-WHERE tournament_id = 23
-ORDER BY waves DESC;
-*/
-
-func (q *QBot) handleHistory(cmd Cmd) error {
-	if !q.isModerator(cmd.Message) {
+	var lines []string
+	for rows.Next() {
+		var id int64
+		var name, shortName string
+		if err := rows.Scan(&id, &name, &shortName); err != nil {
+			q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament list.")
+			return errors.Wrap(err, "scanning tournament list")
+		}
+		lines = append(lines, fmt.Sprintf("• **%s** (`%s`)", name, shortName))
+	}
+	if len(lines) == 0 {
+		q.mustPost(cmd.Message.ChannelID, "_No tournaments found._")
 		return nil
 	}
 
-	if len(cmd.Args) != 1 {
-		q.mustPost(cmd.Message.ChannelID, "Usage: `!history <tournament-identifier>`")
-		return nil
+	more := totalCount - limit
+	if more < 0 {
+		more = 0
 	}
-	givenShortName := cmd.Args[0]
 
+	moreMsg := ""
+	if more > 0 {
+		moreMsg = fmt.Sprintf("\n\n_... %d more tournaments not shown..._", more)
+	}
+
+	msg := fmt.Sprintf("📋 **Latest %d Tournaments:**\n%s%s\n\n_Use `!history <tourney_name>` to view results for a specific tournament._", len(lines), strings.Join(lines, "\n"), moreMsg)
+
+	q.mustPost(cmd.Message.ChannelID, msg)
+	return nil
+}
+
+func (q *QBot) getTourneysHistory(cmd Cmd, givenShortName string) error {
 	tournamentShortName, err := parseTournamentShortName(givenShortName)
 	if err != nil {
 		q.mustPost(cmd.Message.ChannelID, errors.Wrap(err, "❌ parse tournament identifier").Error())

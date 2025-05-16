@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v0.8.1 - 16 May 2025
+- Add `list` mode to the `!history` command
+
 ### v0.8.0 - 15 May 2025
 - Display names are used instead of usernames in the loser meme.
 - Add some dev utilities
