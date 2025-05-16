@@ -1,5 +1,12 @@
 # CHANGELOG
 
+### v0.8.3 - 16 May 2025
+- `!history` has now merged its normal operation with the `list` operation to simplify the surface. Now its inferred
+based on arguments what is being requested. If the user provides no arguments, we assume they want to list the most
+recent tourneys. If they provide any arguments, we check if the first argument can be parsed as a number. If it can be 
+parsed, then this is interpreted as a limit to be used in the list of tourneys to fetch. if it can't be parsed as an int,
+its assumed this is a date being requested for a specific tourney.
+
 ### v0.8.2 - 16 May 2025
 - `!history list` now supports offset
 - `!history list` now returns detailed stats about each tourney, such as the winner, winner's waves, average wave count, and number of entrants

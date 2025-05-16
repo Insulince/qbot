@@ -2,9 +2,10 @@ package qbot
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func Test_parseTournamentShortName(t *testing.T) {
@@ -28,8 +29,6 @@ func Test_parseTournamentShortName(t *testing.T) {
 		{"0m-d", "03-7"},
 		{"m-0d", "3-07"},
 		{"m-d", "3-7"},
-		{"0d", "07"},
-		{"d", "07"},
 		{"yyyy0m0d", "20250307"},
 		{"yy0m0d", "250307"},
 	} {
@@ -70,11 +69,11 @@ func Test_parseTournamentShortName(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "2025-03-07", shortName)
 	})
-	t.Run("dd", func(t *testing.T) {
+	t.Run("dd should not be supported", func(t *testing.T) {
 		input := "07"
 		shortName, err := parseTournamentShortName(input)
-		require.NoError(t, err)
-		require.Equal(t, "2025-03-07", shortName)
+		require.ErrorContains(t, err, "invalid format \"07\"")
+		require.Zero(t, shortName)
 	})
 	t.Run("yyyymmdd", func(t *testing.T) {
 		input := "20250307"

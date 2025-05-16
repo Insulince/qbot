@@ -13,22 +13,24 @@ import (
 )
 
 func (q *QBot) handleHistory(cmd Cmd) error {
-	if len(cmd.Args) < 1 {
-		q.mustPost(cmd.Message.ChannelID, "Usage: `!history <tournament-identifier>|list [limit] [offset]`")
-		return nil
-	}
-
-	switch arg1 := cmd.Args[0]; arg1 {
-	case "list":
+	if len(cmd.Args) == 0 {
+		// If no args provided, just grab the default most recent list of tourneys
 		if err := q.getTourneyList(cmd); err != nil {
 			return errors.Wrap(err, "getting tourney list")
 		}
-	default:
-		givenShortName := arg1
-		err := q.getTourneysHistory(cmd, givenShortName)
+	}
+
+	// If an arg was provided, we need to infer which approach is being requested, list of tourneys, or specific tourney leaderboard.
+	if _, err := strconv.Atoi(cmd.Args[0]); err != nil {
+		// If it can't be parsed, this is requesting a date, so fetch a specific tourney's leaderboard
+		err := q.getTourneysHistory(cmd)
 		if err != nil {
 			return errors.Wrap(err, "getting tourney history")
 		}
+	}
+	// If it can be parsed, then the arg is a limit, fetch a list of tourneys
+	if err := q.getTourneyList(cmd); err != nil {
+		return errors.Wrap(err, "getting tourney list")
 	}
 
 	return nil
@@ -46,8 +48,8 @@ func (q *QBot) getTourneyList(cmd Cmd) error {
 	offset := defaultOffset
 
 	// Parse limit from user args, if given
-	if len(cmd.Args) >= 2 {
-		userLimitStr := cmd.Args[1]
+	if len(cmd.Args) >= 1 {
+		userLimitStr := cmd.Args[0]
 		userLimit, err := strconv.Atoi(userLimitStr)
 		if err != nil || userLimit <= 0 || userLimit > maxLimit {
 			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("Invalid limit `%s`. Please use a positive integer between 1 and %d.", userLimitStr, maxLimit))
@@ -55,14 +57,18 @@ func (q *QBot) getTourneyList(cmd Cmd) error {
 		}
 		limit = userLimit
 	}
-	if len(cmd.Args) == 3 {
-		userOffsetStr := cmd.Args[2]
+	if len(cmd.Args) == 2 {
+		userOffsetStr := cmd.Args[1]
 		userOffset, err := strconv.Atoi(userOffsetStr)
-		if err != nil || userOffset <= 0 {
+		if err != nil || userOffset < 0 {
 			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("Invalid offset `%s`. Please use an integer between 0 and %d.", userOffsetStr, maxOffset))
 			return errors.Wrapf(err, "parsing offset %q", userOffsetStr)
 		}
 		offset = userOffset
+	}
+	if len(cmd.Args) > 2 {
+		q.mustPost(cmd.Message.ChannelID, "Invalid number of arguments, 0-2 arguments are supported (limit and offset).")
+		return nil
 	}
 
 	// Get total count of tournaments for "more" count
@@ -174,7 +180,13 @@ LIMIT 1;
 	return nil
 }
 
-func (q *QBot) getTourneysHistory(cmd Cmd, givenShortName string) error {
+func (q *QBot) getTourneysHistory(cmd Cmd) error {
+	if len(cmd.Args) != 1 {
+		q.mustPost(cmd.Message.ChannelID, "Invalid number of arguments. Please provide only a single argument, the date of the tournament you want to view.")
+		return nil
+	}
+	givenShortName := cmd.Args[0]
+
 	tournamentShortName, err := parseTournamentShortName(givenShortName)
 	if err != nil {
 		q.mustPost(cmd.Message.ChannelID, errors.Wrap(err, "❌ parse tournament identifier").Error())
@@ -294,13 +306,8 @@ func parseTournamentShortName(input string) (string, error) {
 		if monthPart == "" || dayPart == "" {
 			return "", errors.Errorf("Invalid tournament short name: %s", input)
 		}
-	case 1:
-		dayPart = parts[0]
-		if dayPart == "" {
-			return "", errors.Errorf("Invalid tournament short name: %s", input)
-		}
 	default:
-		return "", fmt.Errorf("invalid format %q, `YYYY-MM-DD`, `MM-DD`, or `DD` expected for past tournaments", input)
+		return "", fmt.Errorf("invalid format %q, `YYYY-MM-DD` or `MM-DD` expected for past tournaments", input)
 	}
 
 	var err error
@@ -319,23 +326,21 @@ func parseTournamentShortName(input string) (string, error) {
 			return "", errors.Errorf("year %d is out of range", year)
 		}
 	}
-	if monthPart != "" {
-		if len(monthPart) > 2 {
-			return "", errors.Errorf("Invalid month: %q", monthPart)
-		}
-		month, err = strconv.Atoi(monthPart)
-		if err != nil {
-			return "", errors.Wrapf(err, "cannot parse month %q", monthPart)
-		}
-		if month < 1 || month > 12 {
-			return "", errors.Errorf("month %d is out of range", month)
-		}
-		if month > currentMonth {
-			if yearPart == "" {
-				year -= 1
-			} else {
-				return "", errors.Errorf("date is in the future")
-			}
+	if len(monthPart) > 2 {
+		return "", errors.Errorf("Invalid month: %q", monthPart)
+	}
+	month, err = strconv.Atoi(monthPart)
+	if err != nil {
+		return "", errors.Wrapf(err, "cannot parse month %q", monthPart)
+	}
+	if month < 1 || month > 12 {
+		return "", errors.Errorf("month %d is out of range", month)
+	}
+	if month > currentMonth {
+		if yearPart == "" {
+			year -= 1
+		} else {
+			return "", errors.Errorf("date is in the future")
 		}
 	}
 	if len(dayPart) > 2 {
@@ -349,20 +354,11 @@ func parseTournamentShortName(input string) (string, error) {
 		return "", errors.Errorf("day %d is out of range", day)
 	}
 	if day > currentDay {
-		if monthPart == "" {
-			// 30 -> 2025-02-30
-			month -= 1
-			if month == 0 {
-				month = 12
+		if month > currentMonth {
+			if yearPart == "" {
 				year -= 1
-			}
-		} else {
-			if month > currentMonth {
-				if yearPart == "" {
-					year -= 1
-				} else {
-					return "", errors.Errorf("date is in the future")
-				}
+			} else {
+				return "", errors.Errorf("date is in the future")
 			}
 		}
 	}
