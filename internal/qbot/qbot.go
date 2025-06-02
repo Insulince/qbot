@@ -28,6 +28,7 @@ type QBot struct {
 	store  Store
 	guilds Guilds
 
+	started time.Time
 	session *discordgo.Session
 
 	queue       []QueueItem
@@ -115,6 +116,7 @@ func (q *QBot) run(ctx context.Context) error {
 	q.Go(q.startScheduler)
 
 	fmt.Println("Q is running")
+	q.started = time.Now()
 
 	select {
 	case <-ctx.Done():

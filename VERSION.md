@@ -1,1 +1,1 @@
-v1.0.0-guilds-alpha
+v1.0.0-version-uptime

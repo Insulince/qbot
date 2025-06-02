@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### v1.0.0-versions-uptime - 2 June 2025
+- !version now displays bot up time.
+- Official v1.0.0 coming soon :tm:
+
 ### v1.0.0-guilds-alpha - 2 June 2025
 - First pass at implementing guild support to make Q multi-server capable.
 - Major refactor, mostly centered around cleaning up the main flow and introducing a Storage layer for better single responsiblity management.
