@@ -17,7 +17,6 @@ func main() {
 }
 
 func Main(ctx context.Context) error {
-	select {}
 	cfg := config.MustGetConfig()
 
 	deps := config.MustBuildDependencies(cfg)
