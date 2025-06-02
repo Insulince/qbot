@@ -31,6 +31,8 @@ func (q *QBot) handleDev(cmd Cmd) error {
 		return q.handleDevDisplayName(cmd)
 	case `parsetourneyname`:
 		return q.handleDevParseTourneyName(cmd)
+	case `guild`:
+		return q.handleDevGuild(cmd)
 	default:
 		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("❌ unknown dev sub-command: `%s`", cmd.Command))
 		return nil
@@ -69,6 +71,12 @@ func (q *QBot) handleDevParseTourneyName(cmd Cmd) error {
 	}
 
 	q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("✅ tourney short name %q parsed into %q!", tourneyShortName, tourneyName))
+
+	return nil
+}
+
+func (q *QBot) handleDevGuild(cmd Cmd) error {
+	q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("message originated from guild %q", cmd.GuildId))
 
 	return nil
 }
