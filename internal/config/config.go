@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"os"
-	"time"
 
 	"github.com/Insulince/jlib/pkg/jmust"
 	"github.com/pkg/errors"
@@ -17,9 +16,9 @@ type (
 	Config struct {
 		DiscordBotToken string `json:"discordBotToken"`
 
-		EnterTimeout  time.Duration `json:"enterTimeout"`
-		FullTimeout   time.Duration `json:"fullTimeout"`
-		WarnThreshold time.Duration `json:"warnThreshold"`
+		EnterTimeoutMinutes  int `json:"enterTimeoutMinutes"`
+		FullTimeoutMinutes   int `json:"fullTimeoutMinutes"`
+		WarnThresholdMinutes int `json:"warnThresholdMinutes"`
 
 		ErrorChannelId     string `json:"errorChannelId"`
 		NotificationRoleId string `json:"notificationRoleId"`

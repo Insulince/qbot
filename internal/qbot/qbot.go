@@ -56,9 +56,9 @@ func New(cfg config.Config, s Store) (*QBot, error) {
 	q := new(QBot)
 
 	q.discordBotToken = cfg.DiscordBotToken
-	q.enterTimeout = cfg.EnterTimeout
-	q.fullTimeout = cfg.FullTimeout
-	q.warnThreshold = cfg.WarnThreshold
+	q.enterTimeout = time.Duration(cfg.EnterTimeoutMinutes) * time.Minute
+	q.fullTimeout = time.Duration(cfg.FullTimeoutMinutes) * time.Minute
+	q.warnThreshold = time.Duration(cfg.WarnThresholdMinutes) * time.Minute
 	q.errorChannelId = cfg.ErrorChannelId
 	q.notificationRoleId = cfg.NotificationRoleId
 
