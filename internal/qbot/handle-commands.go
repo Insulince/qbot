@@ -2,22 +2,34 @@ package qbot
 
 func (q *QBot) handleCommands(cmd Cmd) error {
 	commandsMessage := "" +
-		"\n**Commands:**\n" +
-		"The following are all supported commands. To use these commands, just type them out and send them with no other message content, no need to mention me or add anything else to the message.\n" +
-		"`!queue` - Join the waiting queue.\n" +
-		"`!enter` - Signal that you've entered your bracket (when you are the active player).\n" +
-		"`!full` - Signal that your bracket is full (when you are the active player).\n" +
-		"`!view` - View the current state of the queue.\n" +
-		"`!leave` - Leave the queue or active slot.\n" +
-		"`!position` - Check your position in the queue.\n" +
-		"`!moretime` - Extend your current timer if you need more time before marking your bracket as full.\n" +
-		"`!help` - Show help message.\n" +
-		"`!commands` - Show bot commands.\n" +
-		"\n**Moderator Commands:**\n" +
-		"`!skip` - Force-skip the current active user.\n" +
-		"`!reset` - Clear the entire queue.\n" +
-		"`!remove @user` - Remove a specific user from the queue.\n" +
-		"`!version` - Display bot version\n"
+		"**Commands**\n" +
+		"\n" +
+		"🎮 **Queue Management**\n" +
+		"• `!queue` - Join the queue\n" +
+		"• `!enter` - (used after `!queue` on your turn) Indicates you have entered a tournament bracket and are monitoring its fill-progress\n" +
+		"• `!full` - (used after `!full` on your turn) Indicates your bracket is full and removes you from the queue\n" +
+		"• `!leave` - Leave the current queue\n" +
+		"• `!view` - View the current queue\n" +
+		"• `!position` - Check your position in queue\n" +
+		"• `!moretime` - Add more time to current queue step\n" +
+		"\n" +
+		"🏆 **Statistics & Records**\n" +
+		"• `!leaderboard` - View the current tournament leaderboard\n" +
+		"• `!submitwave <number>` - Submit your wave count for the current tournament\n" +
+		"• `!history [YYYY-MM-DD]` - View tournament history\n" +
+		"  └ Usage: `!history` (recent tournaments)\n" +
+		"  └ Usage: `!history 2024-03-15` (specific tournament)\n" +
+		"\n" +
+		"ℹ️ **Help & Information**\n" +
+		"• `!help` - Display help message + commands\n" +
+		"• `!commands` - Display summary of available commands\n" +
+		"• `!version` - Show bot version and uptime\n" +
+		"\n" +
+		"🎭 **Memes**\n" +
+		"• `!owned` - Get owned\n" +
+		"\n" +
+		"**Notes:**\n" +
+		"- Commands are not case-sensitive, _but I am not a fan of shouting_."
 
 	q.mustPost(cmd.Message.ChannelID, commandsMessage)
 
