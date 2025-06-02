@@ -40,3 +40,7 @@ ssh:
     echo For running SQL queries do:
     echo sqlite3 /var/lib/litefs/qbot.db
     fly ssh console -a qbot
+
+# Recipe backup will run backup.bat which copies the sqlite db file from fly to the local machine.
+backup:
+    backup.bat

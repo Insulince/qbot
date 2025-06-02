@@ -16,3 +16,4 @@ justfile
 README.md
 repomix.config.json
 WISHLIST.md
+backups/

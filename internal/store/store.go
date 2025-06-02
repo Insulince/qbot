@@ -156,7 +156,7 @@ INSERT INTO tournament_entries
     (guild_id, tournament_id, user_id, username, waves, display_name)
 VALUES
     (?, ?, ?, ?, ?, ?)
-ON CONFLICT (tournament_id, user_id) DO UPDATE SET waves = excluded.waves
+ON CONFLICT (guild_id, tournament_id, user_id) DO UPDATE SET waves = excluded.waves
 ;`
 
 	if _, err := s.db.Exec(insertWaveSql, guildId, tournamentId, userId, username, waves, displayName); err != nil {
