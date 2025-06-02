@@ -159,7 +159,7 @@ VALUES
 ON CONFLICT (tournament_id, user_id) DO UPDATE SET waves = excluded.waves
 ;`
 
-	if _, err := s.db.Exec(guildId, insertWaveSql, tournamentId, userId, username, waves, displayName); err != nil {
+	if _, err := s.db.Exec(insertWaveSql, guildId, tournamentId, userId, username, waves, displayName); err != nil {
 		return errors.Wrap(err, "exec query")
 	}
 
