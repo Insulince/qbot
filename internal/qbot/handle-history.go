@@ -16,6 +16,7 @@ func (q *QBot) handleHistory(cmd Cmd) error {
 		if err := q.getTourneyList(cmd); err != nil {
 			return errors.Wrap(err, "getting tourney list")
 		}
+		return nil
 	}
 
 	// If an arg was provided, we need to infer which approach is being requested, list of tourneys, or specific tourney leaderboard.
