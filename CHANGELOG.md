@@ -1,5 +1,11 @@
 # CHANGELOG
 
+### v1.0.0-guilds-alpha - 2 June 2025
+- First pass at implementing guild support to make Q multi-server capable.
+- Major refactor, mostly centered around cleaning up the main flow and introducing a Storage layer for better single responsiblity management.
+- Add guild_id to schema for tournament_entries and backfill existing data
+- Switch from env-var config to json file config
+
 ### v0.8.3 - 16 May 2025
 - `!history` has now merged its normal operation with the `list` operation to simplify the surface. Now its inferred
 based on arguments what is being requested. If the user provides no arguments, we assume they want to list the most

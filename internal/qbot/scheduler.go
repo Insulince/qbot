@@ -12,8 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-var announcementChannelID = "1343112046404833351" // #tournament-queue
-
 // Schedule of announcements (UTC time)
 var schedule = map[string]string{
 	// Saturday tourney
@@ -42,15 +40,16 @@ func (q *QBot) startScheduler() error {
 				}
 			}
 
-			err := q.announceMessage(msg)
+			err := q.announceMessage(key, msg)
 			if err != nil {
 				return errors.Wrap(err, "announce message")
 			}
-			log.Printf("[%s] Scheduled message sent: %q\n", key, msg)
 
 			if (now.Weekday() == time.Sunday || now.Weekday() == time.Thursday) && now.Hour() == 4 && now.Minute() == 0 {
-				if err := q.handleLeaderboard(emptyCmd, true); err != nil {
-					return errors.Wrap(err, "handling leaderboard")
+				for guildId := range q.guilds {
+					if err := q.handleLeaderboard(Cmd{GuildId: guildId}, true); err != nil {
+						return errors.Wrap(err, "handling leaderboard")
+					}
 				}
 			}
 		}
@@ -59,31 +58,35 @@ func (q *QBot) startScheduler() error {
 	}
 }
 
-func (q *QBot) announceMessage(msg string) error {
+func (q *QBot) announceMessage(key, msg string) error {
 	const everyonePath = "/app/assets/everyone.png"
 
-	file, err := os.Open(everyonePath)
-	if err != nil {
-		q.mustPost(announcementChannelID, "❌ Error: Could not open everyone image.")
-		return errors.Wrapf(err, "open everyone image %q", everyonePath)
-	}
-	defer jmust.MustClose(file)
+	for _, g := range q.guilds {
+		file, err := os.Open(everyonePath)
+		if err != nil {
+			q.mustPost(g.AnnouncementChannelId, "❌ Error: Could not open everyone image.")
+			return errors.Wrapf(err, "open everyone image %q", everyonePath)
+		}
+		defer jmust.MustClose(file)
 
-	// Create a message with the modified image
-	message := &discordgo.MessageSend{
-		Content: msg,
-		Files: []*discordgo.File{
-			{
-				Name:   "everyone.png",
-				Reader: file,
+		// Create a message with the image
+		message := &discordgo.MessageSend{
+			Content: msg,
+			Files: []*discordgo.File{
+				{
+					Name:   "everyone.png",
+					Reader: file,
+				},
 			},
-		},
-	}
+		}
 
-	// Send the message with the image
-	if _, err = q.session.ChannelMessageSendComplex(announcementChannelID, message); err != nil {
-		q.mustPost(announcementChannelID, "❌ Error: Failed to send announcement message and image.")
-		return errors.Wrapf(err, "send announcement message and image")
+		// Send the message with the image
+		if _, err = q.session.ChannelMessageSendComplex(g.AnnouncementChannelId, message); err != nil {
+			q.mustPost(g.AnnouncementChannelId, "❌ Error: Failed to send announcement message and image.")
+			return errors.Wrapf(err, "send announcement message and image")
+		}
+
+		log.Printf("[%s] Scheduled message sent to guild %q: %q\n", key, g.Name, msg)
 	}
 
 	return nil
@@ -95,18 +98,11 @@ func (q *QBot) createNewTournament() error {
 	now := time.Now().UTC()
 	shortName := fmt.Sprintf("%04d-%02d-%02d", now.Year(), now.Month(), now.Day())
 
-	// Generate full tournament name
+	// Generate the full tournament name
 	fullName := fmt.Sprintf("%d %s %d", now.Day(), strings.ToUpper(now.Month().String()), now.Year())
 
-	// Insert new tournament into the database
-	const newTournamentSql = `
-INSERT INTO tournaments
-    (name, short_name)
-VALUES
-    (?, ?);
-`
-	if _, err := q.db.Exec(newTournamentSql, fullName, shortName); err != nil {
-		return errors.Wrap(err, "❌ Error inserting new tournament")
+	if err := q.store.InsertTournament(shortName, fullName); err != nil {
+		return errors.Wrap(err, "")
 	}
 
 	log.Println("✅ New tournament created:", fullName)

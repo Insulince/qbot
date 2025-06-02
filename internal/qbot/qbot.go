@@ -1,78 +1,108 @@
 package qbot
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
-	"log"
-	"regexp"
-	"strings"
+	"io"
 	"sync"
 	"time"
-	"unicode"
 
 	"github.com/Insulince/jlib/pkg/jmust"
 	"github.com/pkg/errors"
 
 	"github.com/bwmarrin/discordgo"
+
+	"github.com/Insulince/qbot/internal/config"
+	"github.com/Insulince/qbot/internal/models"
 )
-
-const (
-	sqliteDriver = "sqlite"
-	databaseFile = "/var/lib/litefs/qbot.db"
-
-	exclamationsRegexString = `^!+$`
-)
-
-// Define regex to check if the encountered command is only exclamation marks
-var exclamationsRegex = regexp.MustCompile(exclamationsRegexString)
-
-// QueueItem represents an entry in the queue.
-type QueueItem struct {
-	UserID    string
-	AddedAt   time.Time // timestamp for the current phase (enter or full)
-	ChannelID string    // channel the user joined from
-	Entered   bool      // whether the user has signaled they've joined a bracket
-	Warned    bool      // whether a warning has been sent for the current phase
-}
 
 // QBot struct holds the Discord session and state.
 type QBot struct {
-	session *discordgo.Session
-	db      *sql.DB
+	discordBotToken    string
+	enterTimeout       time.Duration
+	fullTimeout        time.Duration
+	warnThreshold      time.Duration
+	errorChannelId     string
+	notificationRoleId string
 
-	queue         []QueueItem
-	queueMutex    sync.Mutex
-	currentUser   *QueueItem
-	enterTimeout  time.Duration
-	fullTimeout   time.Duration
-	warnThreshold time.Duration
+	store  Store
+	guilds Guilds
+
+	session *discordgo.Session
+
+	queue       []QueueItem
+	queueMutex  sync.Mutex
+	currentUser *QueueItem
+}
+
+type Store interface {
+	InsertTournament(name, shortName string) error
+	GetLatestTournament() (*models.Tournament, error)
+	GetTournamentByShortName(shortName string) (*models.Tournament, error)
+	ListTournaments(limit, offset int) ([]*models.Tournament, error)
+	CountTournaments() (int, error)
+
+	InsertTournamentEntry(guildId string, tournamentId int64, userId, username, displayName string, waves int) error
+	GetTournamentEntries(guildId string, tournamentId int64) ([]*models.TournamentEntry, error)
+	GetLatestTournamentEntries(guildId string) ([]*models.TournamentEntry, error)
+	GetTournamentWinner(guildId string, tournamentId int64, maxWaves int64) (*models.TournamentEntry, error)
+	GetTournamentStats(guildId string, tournamentId int64) (entrants int, maxWaves *int64, averageWaves *float64, _ error)
+
+	io.Closer
 }
 
 // New initializes and returns a new QBot instance.
-func New(token string) (*QBot, error) {
-	q := &QBot{
-		enterTimeout:  5 * time.Minute,
-		fullTimeout:   30 * time.Minute,
-		warnThreshold: 2 * time.Minute,
+func New(cfg config.Config, s Store) (*QBot, error) {
+	q := new(QBot)
+
+	q.discordBotToken = cfg.DiscordBotToken
+	q.enterTimeout = cfg.EnterTimeout
+	q.fullTimeout = cfg.FullTimeout
+	q.warnThreshold = cfg.WarnThreshold
+	q.errorChannelId = cfg.ErrorChannelId
+	q.notificationRoleId = cfg.NotificationRoleId
+
+	q.guilds = make(map[string]Guild, len(cfg.Guilds))
+	for id, cg := range cfg.Guilds {
+		var g Guild
+		g.Name = cg.Name
+		g.AnnouncementChannelId = cg.AnnouncementChannelId
+		q.guilds[id] = g
 	}
 
-	// Requisition a database connection for use in the command.
-	db, err := sql.Open(sqliteDriver, databaseFile)
+	q.store = s
+
+	session, err := q.newSession()
 	if err != nil {
-		return nil, errors.Wrap(err, "error opening database")
-	}
-	q.db = db
-
-	// Start a new session.
-	if err := q.newSession(token); err != nil {
 		return nil, errors.Wrap(err, "new session")
 	}
+	q.session = session
 
-	// Start the timeout checker.
-	q.Go(q.timeoutChecker)
+	return q, nil
+}
 
-	// Start the scheduler.
-	q.Go(q.startScheduler)
+func MustNew(cfg config.Config, s Store) *QBot {
+	return jmust.Must[*QBot](New, cfg, s)[0]
+}
+
+func (q *QBot) Run(ctx context.Context) chan error {
+	errs := make(chan error, 1)
+
+	go func() {
+		defer close(errs)
+
+		if err := q.run(ctx); err != nil {
+			errs <- errors.Wrap(err, "run")
+		}
+	}()
+
+	return errs
+}
+
+func (q *QBot) run(ctx context.Context) error {
+	if err := q.session.Open(); err != nil {
+		return errors.Wrap(err, "opening session")
+	}
 
 	defer func() {
 		if v := recover(); v != nil {
@@ -81,238 +111,45 @@ func New(token string) (*QBot, error) {
 		}
 	}()
 
-	fmt.Println("Q is ready")
+	q.Go(q.timeoutChecker)
+	q.Go(q.startScheduler)
 
-	return q, nil
-}
+	fmt.Println("Q is running")
 
-func (q *QBot) newSession(token string) error {
-	// Create a new Discord session
-	auth := fmt.Sprintf("Bot %s", token)
-	session, err := discordgo.New(auth)
-	if err != nil {
-		return errors.Wrap(err, "error creating Discord session")
+	select {
+	case <-ctx.Done():
 	}
-
-	// Set intents
-	session.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsDirectMessages | discordgo.IntentsMessageContent
-
-	// Register handlers
-	session.AddHandler(q.messageHandler)
-
-	// Open connection
-	if err := session.Open(); err != nil {
-		return errors.Wrap(err, "opening session")
-	}
-
-	// Record session on q
-	q.session = session
 
 	return nil
+}
+
+func (q *QBot) newSession() (*discordgo.Session, error) {
+	auth := fmt.Sprintf("Bot %s", q.discordBotToken)
+	session, err := discordgo.New(auth)
+	if err != nil {
+		return nil, errors.Wrap(err, "error creating Discord session")
+	}
+
+	session.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMembers | discordgo.IntentsGuildMessages | discordgo.IntentsDirectMessages | discordgo.IntentsMessageContent
+
+	session.AddHandler(q.messageHandler)
+
+	return session, nil
 }
 
 // Close shuts down the bot.
-func (q *QBot) Close() {
-	jmust.MustClose(q.session)
+func (q *QBot) Close() error {
+	if err := q.session.Close(); err != nil {
+		return errors.Wrap(err, "session close")
+	}
 
-	defer jmust.MustClose(q.db)
-}
-
-// post splits long messages into chunks and sends them serially.
-func (q *QBot) post(channelId, msg string) error {
-	const chunkSize = 2000 // Max Discord message length
-
-	// Split message into chunks of at most 2000 characters
-	for len(msg) > 0 {
-		// Determine the length of the next chunk
-		end := chunkSize
-		if len(msg) < chunkSize {
-			end = len(msg)
-		}
-
-		// Send the chunk
-		if _, err := q.session.ChannelMessageSend(channelId, msg[:end]); err != nil {
-			return errors.Wrapf(err, "failed to send message to channel %q", channelId)
-		}
-
-		// Move to the next chunk
-		msg = msg[end:]
+	if err := q.store.Close(); err != nil {
+		return errors.Wrap(err, "store close")
 	}
 
 	return nil
 }
 
-func (q *QBot) mustPost(channelId, msg string) {
-	jmust.Must[any](q.post, channelId, msg)
-}
-
-func (q *QBot) postWithoutTags(channelId, msg string) error {
-	const chunkSize = 2000 // Max Discord message length
-
-	// Split message into chunks of at most 2000 characters
-	for len(msg) > 0 {
-		// Determine the length of the next chunk
-		end := chunkSize
-		if len(msg) < chunkSize {
-			end = len(msg)
-		}
-
-		// Send the chunk
-		_, err := q.session.ChannelMessageSendComplex(channelId, &discordgo.MessageSend{
-			Content: msg[:end],
-			AllowedMentions: &discordgo.MessageAllowedMentions{
-				Parse: []discordgo.AllowedMentionType{}, // Prevents pinging
-			},
-		})
-		if err != nil {
-			return errors.Wrapf(err, "failed to send message to channel %q", channelId)
-		}
-
-		// Move to the next chunk
-		msg = msg[end:]
-	}
-
-	return nil
-}
-
-func (q *QBot) mustPostWithoutTags(channelId, msg string) {
-	jmust.Must[any](q.postWithoutTags, channelId, msg)
-}
-
-type Cmd struct {
-	Message *discordgo.MessageCreate
-	Command string
-	Args    []string
-}
-
-var emptyCmd = Cmd{}
-
-func (cmd Cmd) String() string {
-	return fmt.Sprintf("%s %s", cmd.Command, strings.Join(cmd.Args, " "))
-}
-
-func (cmd Cmd) Empty() bool {
-	return cmd.Command == ""
-}
-
-func interpretMessage(m *discordgo.MessageCreate) (Cmd, error) {
-	content := m.Content
-
-	// Remove spaces from the left of the message.
-	content = strings.TrimLeftFunc(content, unicode.IsSpace)
-
-	// Check that the message begins with an exclamation mark.
-	if !strings.HasPrefix(content, "!") {
-		return emptyCmd, nil
-	}
-
-	// The message appears to be a bot command, so lets split it up by space to get the command and args.
-	segments := strings.Split(content, " ")
-	if len(segments) == 0 {
-		return Cmd{}, errors.Errorf("message %q does not contain any space-delimitted segments", content)
-	}
-
-	command := strings.ToLower(segments[0])
-	args := segments[1:]
-
-	if exclamationsRegex.MatchString(command) {
-		// This command is composed of only exclamation marks which is not a bot command, do nothing.
-		return emptyCmd, nil
-	}
-
-	var cmd Cmd
-
-	cmd.Message = m
-	cmd.Command = command
-	cmd.Args = args
-
-	return cmd, nil
-}
-
-// messageHandler routes commands to the proper handlers.
-func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) {
-	// NOTE(justin): We explicitly ignore the discord session because we already have one in q. It is required as part
-	// of the contract to qualify this function as a MessageHandler to register with Discord's API. It is for this same
-	// reason that we cannot make this function return an error and have to do this silly anonymous function stuff
-	// in the following code.
-
-	err := func() error {
-		// Log every message for debugging.
-		log.Printf("[%s] %s: %s\n", m.ChannelID, m.Author.Username, m.Content)
-
-		// Ignore messages from the bot itself.
-		if m.Author.ID == q.session.State.User.ID {
-			return nil
-		}
-
-		// Check if the message directly mentions the bot.
-		for _, user := range m.Mentions {
-			if user.ID == q.session.State.User.ID {
-				q.mustPost(m.ChannelID, fmt.Sprintf("I can't respond to direct mentions, use `!help` for usage details"))
-				return nil
-			}
-		}
-
-		// Extract command and args
-		cmd, err := interpretMessage(m)
-		if err != nil {
-			return errors.Wrapf(err, "interpreting message")
-		}
-
-		if cmd.Empty() {
-			// This message does not appear to be a bot command, do nothing.
-			return nil
-		}
-
-		if strings.ToUpper(cmd.Message.Content) == cmd.Message.Content {
-			q.mustPost(cmd.Message.ChannelID, "I heard you, no need to shout!")
-		}
-
-		// Command routing.
-		switch cmd.Command {
-		case `!queue`, `!q`, `!enqueue`, `!join`:
-			return q.handleQueue(cmd)
-		case `!enter`, `!enterbracket`:
-			return q.handleEnter(cmd)
-		case `!full`, `!bracketfull`:
-			return q.handleFull(cmd)
-		case `!view`, `!viewqueue`:
-			return q.handleView(cmd)
-		case `!leave`, `!leavequeue`:
-			return q.handleLeave(cmd)
-		case `!position`, `!currentposition`:
-			return q.handlePosition(cmd)
-		case `!help`:
-			return q.handleHelp(cmd)
-		case `!commands`:
-			return q.handleCommands(cmd)
-		case `!version`:
-			return q.handleVersion(cmd)
-		case `!skip`, `!skipcurrent`:
-			return q.handleSkip(cmd)
-		case `!reset`, `!resetqueue`:
-			return q.handleReset(cmd)
-		case `!remove`, `!removeplayer`:
-			return q.handleRemove(cmd)
-		case `!moretime`, `!extend`:
-			return q.handleMoreTime(cmd)
-		case `!submitwave`, `!submitwaves`, `!wave`, `!waves`:
-			return q.handleSubmitWave(cmd)
-		case `!leaderboard`, `!lb`:
-			return q.handleLeaderboard(cmd, false)
-		case `!owned`:
-			return q.handleOwned(cmd)
-		case `!history`:
-			return q.handleHistory(cmd)
-		case `!dev`:
-			return q.handleDev(cmd)
-		default:
-			q.mustPost(m.ChannelID, fmt.Sprintf("unknown command (use `!help` for available commands): `%s`", cmd.Command))
-			return nil
-		}
-	}()
-
-	if err != nil {
-		q.reportError(err)
-	}
+func (q *QBot) MustClose() {
+	jmust.Must[any](q.Close)
 }

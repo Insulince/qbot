@@ -2,30 +2,25 @@ package qbot
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/pkg/errors"
-
 	"log"
 	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 )
 
-// Send error message to Discord
+// Send an error message to Discord
 func (q *QBot) reportError(err error) {
 	if err == nil {
 		return
 	}
 
-	const (
-		errorChannelId     = "1342728552705163336" // #q-testing
-		notificationRoleId = "1348155892377321554" // @Q-dev
-	)
-
 	// Format error message
-	errorMessage := fmt.Sprintf("🚨 **Error in Q** 🚨\n<@&%s>: %s", notificationRoleId, err.Error())
+	errorMessage := fmt.Sprintf("🚨 **Error in Q** 🚨\n<@&%s>: %s", q.notificationRoleId, err.Error())
 
-	// Send error message to the private error channel
-	q.mustPost(errorChannelId, errorMessage)
+	// Send an error message to the private error channel
+	q.mustPost(q.errorChannelId, errorMessage)
 
 	// Also log error to stdout for redundancy
 	log.Println(err)
@@ -41,6 +36,8 @@ func (q *QBot) Go(fn func() error) {
 
 // isModerator checks whether the invoking member has a role named "Moderator".
 func (q *QBot) isModerator(m *discordgo.MessageCreate) bool {
+	// TODO(Insulince): Rework this.
+
 	// Must be in a guild and have member info.
 	if m.GuildID == "" || m.Member == nil {
 		return false

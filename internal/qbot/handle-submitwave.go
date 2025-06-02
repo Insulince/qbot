@@ -14,7 +14,7 @@ func (q *QBot) handleSubmitWave(cmd Cmd) error {
 		return nil
 	}
 
-	userID := cmd.Message.Author.ID
+	userId := cmd.Message.Author.ID
 	username := cmd.Message.Author.Username
 	id := cmd.Message.Author.ID
 	wavesStr := cmd.Args[0]
@@ -32,30 +32,15 @@ func (q *QBot) handleSubmitWave(cmd Cmd) error {
 		return nil
 	}
 
-	const fetchLatestTournamentIdSql = `
-SELECT
-    MAX(id)
-FROM tournaments;
-`
-	var tournamentId int
-	if err := q.db.QueryRow(fetchLatestTournamentIdSql).Scan(&tournamentId); err != nil {
-		q.mustPost(cmd.Message.ChannelID, "Error retrieving leaderboard.")
-		return errors.Wrap(err, "query row")
+	tournament, err := q.store.GetLatestTournament()
+	if err != nil {
+		return errors.Wrap(err, "get latest tournament")
 	}
 
-	// Update or insert new high score
-	insertWaveSql := `
-INSERT INTO tournament_entries
-    (tournament_id, user_id, username, waves, display_name)
-VALUES
-    (?, ?, ?, ?, ?)
-ON CONFLICT (tournament_id, user_id) DO UPDATE SET waves = excluded.waves;
-`
-	_, err = q.db.Exec(insertWaveSql, tournamentId, userID, username, waves, displayName)
-	if err != nil {
-		q.mustPost(cmd.Message.ChannelID, "Error saving your waves.")
-		return errors.Wrap(err, "exec query")
+	if err := q.store.InsertTournamentEntry(cmd.GuildId, tournament.Id, userId, username, displayName, waves); err != nil {
+		return errors.Wrap(err, "inserting tournament entry")
 	}
+
 	q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("✅ <@%s> set their waves to **%d**!", id, waves))
 
 	return nil

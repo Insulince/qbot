@@ -8,12 +8,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_interpretMessage(t *testing.T) {
+func Test_QBot_interpretMessage(t *testing.T) {
 	t.Run("should properly interpret command + args", func(t *testing.T) {
 		content := "!submitwave 1234"
 		m := &discordgo.MessageCreate{Message: &discordgo.Message{Content: content}}
 
-		cmd, err := interpretMessage(m)
+		q := new(QBot)
+		q.guilds = Guilds{"": {}}
+
+		cmd, err := q.interpretMessage(m)
 		require.NoError(t, err)
 
 		segments := strings.Split(content, " ")

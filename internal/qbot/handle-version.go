@@ -2,6 +2,7 @@ package qbot
 
 import (
 	"fmt"
+
 	"github.com/Insulince/qbot/internal/version"
 )
 

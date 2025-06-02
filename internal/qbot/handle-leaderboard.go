@@ -6,7 +6,6 @@ import (
 	"image/color"
 	"image/draw"
 	"image/png"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -18,49 +17,27 @@ import (
 	"golang.org/x/image/font"
 )
 
-const (
-	ChannelIdTournamentQueue = "1343112046404833351" // #tournament-queue
-)
-
 // Handle !leaderboard
 func (q *QBot) handleLeaderboard(cmd Cmd, final bool) error {
-	channelId := ChannelIdTournamentQueue
+	g := q.guilds.MustGet(cmd.GuildId)
+	channelId := g.AnnouncementChannelId
 	if cmd.Message != nil {
 		channelId = cmd.Message.ChannelID
 	}
 
-	const fetchTournamentEntriesSql = `
-SELECT
-    user_id,
-    username,
-    waves,
-    display_name
-FROM tournament_entries
-WHERE tournament_id = (SELECT MAX(id) FROM tournaments)
-ORDER BY waves DESC;
-`
-	rows, err := q.db.Query(fetchTournamentEntriesSql)
+	tournamentEntries, err := q.store.GetLatestTournamentEntries(cmd.GuildId)
 	if err != nil {
-		q.mustPost(channelId, "Error retrieving leaderboard.")
-		return errors.Wrap(err, "querying tournaments")
+		return errors.Wrap(err, "getting latest tournament entries")
 	}
-	defer jmust.MustClose(rows)
 
 	leaderboardMsg := fmt.Sprintf("🏆 **Latest Tournament Leaderboard** 🏆\n")
 	var entries []string
 	var lastPlaceDisplayName string
-	for i := 1; rows.Next(); i++ {
-		var userId string
-		var username string
-		var waves int
-		var displayName string
-		if err := rows.Scan(&userId, &username, &waves, &displayName); err != nil {
-			return errors.Wrap(err, "scanning fields")
-		}
-		entry := fmt.Sprintf("%d. **<@%s>** - Wave %d", i, userId, waves)
+	for i, tournamentEntry := range tournamentEntries {
+		entry := fmt.Sprintf("%d. **<@%s>** - Wave %d", i, tournamentEntry.UserId, tournamentEntry.Waves)
 		entries = append(entries, entry)
 
-		lastPlaceDisplayName = displayName // Keep track of the last user
+		lastPlaceDisplayName = tournamentEntry.DisplayName // Keep track of the last user
 	}
 
 	entriesMsg := "_No entries yet._"
@@ -105,10 +82,10 @@ func (q *QBot) congratulateLoser(channelID, lastPlaceDisplayName string) {
 	draw.Draw(rgba, bounds, img, bounds.Min, draw.Src)
 
 	// Load font
-	fontBytes, err := ioutil.ReadFile("/app/assets/impact.ttf")
+	fontBytes, err := os.ReadFile("/app/assets/impact.ttf")
 	if err != nil {
 		// Fallback to system font if custom font not available
-		fontBytes, err = ioutil.ReadFile("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
+		fontBytes, err = os.ReadFile("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
 		if err != nil {
 			q.mustPost(channelID, "❌ Error: Could not load font.")
 			return

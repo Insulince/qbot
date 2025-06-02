@@ -5,17 +5,26 @@ import (
 	"time"
 )
 
+// QueueItem represents an entry in the queue.
+type QueueItem struct {
+	UserID    string
+	AddedAt   time.Time // timestamp for the current phase (enter or full)
+	ChannelID string    // channel the user joined from
+	Entered   bool      // whether the user has signaled they've joined a bracket
+	Warned    bool      // whether a warning has been sent for the current phase
+}
+
 // handleQueue adds a user to the waiting queue.
 func (q *QBot) handleQueue(cmd Cmd) error {
 	q.queueMutex.Lock()
 	defer q.queueMutex.Unlock()
 
-	// Check if user is already active.
+	// Check if the user is already active.
 	if q.currentUser != nil && q.currentUser.UserID == cmd.Message.Author.ID {
 		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, you are already active. Please use `!enter` or `!full` as appropriate.", cmd.Message.Author.ID))
 		return nil
 	}
-	// Check if user is already in the waiting queue.
+	// Check if the user is already in the waiting queue.
 	for _, item := range q.queue {
 		if item.UserID == cmd.Message.Author.ID {
 			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, you are already in the queue.", cmd.Message.Author.ID))

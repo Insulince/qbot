@@ -1,14 +1,12 @@
 package qbot
 
 import (
-	"database/sql"
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/Insulince/jlib/pkg/jmust"
 	"github.com/pkg/errors"
 )
 
@@ -72,86 +70,43 @@ func (q *QBot) getTourneyList(cmd Cmd) error {
 		return nil
 	}
 
-	// Get total count of tournaments for "more" count
-	const countSql = `
-SELECT COUNT(*)
-FROM tournaments;
-`
-	var totalCount int
-	if err := q.db.QueryRow(countSql).Scan(&totalCount); err != nil {
-		q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament count.")
-		return errors.Wrap(err, "count tournaments")
+	// Get the total count of tournaments for "more" count
+	totalCount, err := q.store.CountTournaments()
+	if err != nil {
+		return errors.Wrap(err, "counting tournaments")
 	}
 
-	const fetchLatestTournamentsSql = `
-SELECT
-	id,
-	name,
-	short_name
-FROM tournaments
-ORDER BY id DESC
-LIMIT ?
-OFFSET ?;
-`
-	rows, err := q.db.Query(fetchLatestTournamentsSql, limit, offset)
+	tournaments, err := q.store.ListTournaments(limit, offset)
 	if err != nil {
-		q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament list.")
-		return errors.Wrap(err, "query tournaments list")
+		return errors.Wrap(err, "listing tournaments")
 	}
-	defer jmust.MustClose(rows)
 
 	var lines []string
-	for rows.Next() {
-		var id int64
-		var name, shortName string
-		if err := rows.Scan(&id, &name, &shortName); err != nil {
-			q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament list.")
-			return errors.Wrap(err, "scanning tournament list")
-		}
-
-		// Query for entrants, winner, avg wave
-		const statsSql = `
-SELECT
-	COUNT(*) as entrants,
-	MAX(waves) as max_waves,
-	AVG(waves) as avg_waves
-FROM tournament_entries
-WHERE tournament_id = ?;
-`
-		var entrants int
-		var maxWaves sql.NullInt64
-		var avgWaves sql.NullFloat64
-		if err := q.db.QueryRow(statsSql, id).Scan(&entrants, &maxWaves, &avgWaves); err != nil {
-			lines = append(lines, fmt.Sprintf("• **%s** (`%s`) - _No entrants_", name, shortName))
-			continue
+	for _, tournament := range tournaments {
+		entrants, maxWaves, averageWaves, err := q.store.GetTournamentStats(cmd.GuildId, tournament.Id)
+		if err != nil {
+			return errors.Wrap(err, "getting tournament stats")
 		}
 
 		// Query for winner display name
 		winnerName := "_No winner_"
 		winnerWaveCount := 0
-		if maxWaves.Valid && entrants > 0 {
-			const winnerSql = `
-SELECT user_id
-FROM tournament_entries
-WHERE tournament_id = ? AND waves = ?
-LIMIT 1;
-`
-			var userId string
-			err := q.db.QueryRow(winnerSql, id, maxWaves.Int64).Scan(&userId)
+		if maxWaves != nil && entrants > 0 {
+			tournamentWinner, err := q.store.GetTournamentWinner(cmd.GuildId, tournament.Id, *maxWaves)
 			if err != nil {
-				q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament winner.")
-				return errors.Wrap(err, "querying tournament winner")
+				return errors.Wrap(err, "get tournament winner")
 			}
-			winnerName = fmt.Sprintf("<@%s>", userId)
-			winnerWaveCount = int(maxWaves.Int64)
+
+			winnerName = fmt.Sprintf("<@%s>", tournamentWinner.UserId)
+			winnerWaveCount = int(*maxWaves)
 		}
 
 		avgWaveText := "_N/A_"
-		if avgWaves.Valid {
-			avgWaveText = fmt.Sprintf("%d", int(math.Round(avgWaves.Float64)))
+		if averageWaves != nil {
+			avgWaveText = fmt.Sprintf("%d", int(math.Round(*averageWaves)))
 		}
 
-		line := fmt.Sprintf("• **%s** (`%s`) — Entrants: `%2d` (Avg `%4s`) | Winner: **%s** (`%4d`)", name, shortName, entrants, avgWaveText, winnerName, winnerWaveCount)
+		line := fmt.Sprintf("• **%s** (`%s`) — Entrants: `%2d` (Avg `%4s`) | Winner: **%s** (`%4d`)", tournament.Name, tournament.ShortName, entrants, avgWaveText, winnerName, winnerWaveCount)
 		lines = append(lines, line)
 	}
 	if len(lines) == 0 {
@@ -194,49 +149,21 @@ func (q *QBot) getTourneysHistory(cmd Cmd) error {
 		return nil
 	}
 
-	const fetchTournamentSql = `
-SELECT
-	id,
-	name
-FROM tournaments
-WHERE short_name = ?;
-`
-	var tournamentId int64
-	var tournamentName string
-	if err := q.db.QueryRow(fetchTournamentSql, tournamentShortName).Scan(&tournamentId, &tournamentName); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("_No tournament found for %q_", tournamentShortName))
-			return nil
-		}
-		q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament history.")
-		return errors.Wrap(err, "query row")
-	}
-
-	const fetchTournamentEntriesSql = `
-SELECT
-	user_id,
-	waves
-FROM tournament_entries
-WHERE tournament_id = ?
-ORDER BY waves DESC;
-`
-	tournamentEntriesRows, err := q.db.Query(fetchTournamentEntriesSql, tournamentId)
+	tournament, err := q.store.GetTournamentByShortName(tournamentShortName)
 	if err != nil {
-		q.mustPost(cmd.Message.ChannelID, "Error retrieving tournament entries.")
-		return errors.Wrap(err, "query")
+		return errors.Wrap(err, "getting tournament by short name")
 	}
-	defer jmust.MustClose(tournamentEntriesRows)
 
-	leaderboardMsg := fmt.Sprintf("🏆 **Tournament %s Leaderboard** 🏆\n", tournamentName)
+	tournamentEntries, err := q.store.GetTournamentEntries(cmd.GuildId, tournament.Id)
+	if err != nil {
+		return errors.Wrap(err, "getting tournament entries")
+	}
+
+	leaderboardMsg := fmt.Sprintf("🏆 **Tournament %s Leaderboard** 🏆\n", tournament.Name)
 	var entries []string
-	for i := 1; tournamentEntriesRows.Next(); i++ {
-		var userId string
-		var waves int
-		if err := tournamentEntriesRows.Scan(&userId, &waves); err != nil {
-			return errors.Wrap(err, "scanning tournament entries rows")
-		}
+	for i, tournamentEntry := range tournamentEntries {
 
-		entry := fmt.Sprintf("%d. **<@%s>** - Wave %d", i, userId, waves)
+		entry := fmt.Sprintf("%d. **<@%s>** - Wave %d", i+1, tournamentEntry.UserId, tournamentEntry.Waves)
 		entries = append(entries, entry)
 	}
 

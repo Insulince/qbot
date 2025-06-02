@@ -2,17 +2,14 @@ package main
 
 import (
 	"context"
-	"fmt"
+
 	"github.com/Insulince/jlib/pkg/jmain"
-	"github.com/Insulince/qbot/internal/qbot"
 	"github.com/pkg/errors"
-	"os"
-
 	_ "modernc.org/sqlite" // SQLite driver
-)
 
-const (
-	EnvVarDiscordBotToken = "DISCORD_BOT_TOKEN"
+	"github.com/Insulince/qbot/internal/config"
+	"github.com/Insulince/qbot/internal/qbot"
+	"github.com/Insulince/qbot/internal/store"
 )
 
 func main() {
@@ -20,23 +17,24 @@ func main() {
 }
 
 func Main(ctx context.Context) error {
-	token, found := os.LookupEnv(EnvVarDiscordBotToken)
-	if !found {
-		return fmt.Errorf("environment variable %q not set", EnvVarDiscordBotToken)
+	cfg := config.MustGetConfig()
+
+	deps := config.MustBuildDependencies(cfg)
+	defer deps.MustClose()
+
+	s := store.MustNew(deps.Db)
+	defer s.MustClose()
+
+	q := qbot.MustNew(cfg, s)
+	defer q.MustClose()
+
+	select {
+	case <-ctx.Done():
+	case err := <-q.Run(ctx):
+		if err != nil {
+			return errors.Wrap(err, "running qbot")
+		}
 	}
-
-	// Initialize and start the bot
-	q, err := qbot.New(token)
-	if err != nil {
-		return errors.Wrap(err, "new qbot")
-	}
-
-	// Block main so the bot can run.
-	<-ctx.Done()
-
-	// Graceful shutdown
-	fmt.Println("Q is shutting down...")
-	q.Close()
 
 	return nil
 }

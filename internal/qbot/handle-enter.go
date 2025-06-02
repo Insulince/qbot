@@ -23,7 +23,7 @@ func (q *QBot) handleEnter(cmd Cmd) error {
 		}
 
 		if inQueue {
-			// User is in queue but not active yet
+			// User is in the queue but not active yet
 			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, you are currently in the queue at position %d. Please wait for your turn before using `!enter`.", cmd.Message.Author.ID, position))
 		} else {
 			// User is not in the queue at all
@@ -38,7 +38,7 @@ func (q *QBot) handleEnter(cmd Cmd) error {
 		return nil
 	}
 
-	// Mark user as having entered
+	// Mark the user as having entered
 	q.currentUser.Entered = true
 	q.currentUser.AddedAt = time.Now()
 	q.currentUser.Warned = false

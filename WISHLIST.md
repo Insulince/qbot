@@ -14,3 +14,5 @@
 - command to extract a players progress out of past tournament results. Something like !progress <username>, and it would scan over all tournament entries for that player and output them, maybe with a delta or something
 - DB backups
 - Add specific `help` sub commands to each command
+- User specific history + graphing?
+- different tiers in tourney tracking
