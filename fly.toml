@@ -7,7 +7,7 @@ primary_region = 'iad'
 
 [env]
   PORT = '8080'
-  CONFIG_FILE_PATH = "/data/config/config.json"
+  CONFIG_FILE_PATH = "/var/lib/litefs/qbot/config.json"
 
 [http_service]
   internal_port = 8080
@@ -25,7 +25,3 @@ primary_region = 'iad'
 [[mounts]]
   source = "litefs_data"
   destination = "/var/lib/litefs"
-
-[[mounts]]
-  source = "config"
-  destination = "/data/config"
