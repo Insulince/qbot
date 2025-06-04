@@ -2,6 +2,8 @@
 
 ### v1.0.0-cross-server-leaderboard - 4 June 2025
 - Leaderboard should now be cross-server
+- History is no longer partitioned by server either
+- Fixed bug in tourney naming
 
 ### v1.0.0-versions-uptime - 2 June 2025
 - !version now displays bot up time.

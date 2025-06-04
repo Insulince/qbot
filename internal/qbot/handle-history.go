@@ -91,6 +91,7 @@ func (q *QBot) getTourneyList(cmd Cmd) error {
 
 		// Query for winner display name
 		winnerName := "_No winner_"
+		winnerDisplayName := "_No winner_"
 		winnerWaveCount := 0
 		if maxWaves != nil && entrants > 0 {
 			tournamentWinner, err := q.store.GetTournamentWinner(cmd.GuildId, tournament.Id, *maxWaves)
@@ -99,6 +100,7 @@ func (q *QBot) getTourneyList(cmd Cmd) error {
 			}
 
 			winnerName = fmt.Sprintf("<@%s>", tournamentWinner.UserId)
+			winnerDisplayName = tournamentWinner.DisplayName
 			winnerWaveCount = int(*maxWaves)
 		}
 
@@ -107,7 +109,7 @@ func (q *QBot) getTourneyList(cmd Cmd) error {
 			avgWaveText = fmt.Sprintf("%d", int(math.Round(*averageWaves)))
 		}
 
-		line := fmt.Sprintf("• **%s** (`%s`) — Entrants: `%2d` (Avg `%4s`) | Winner: **%s** (`%4d`)", tournament.Name, tournament.ShortName, entrants, avgWaveText, winnerName, winnerWaveCount)
+		line := fmt.Sprintf("• **%s** (`%s`) — Entrants: `%2d` (Avg `%4s`) | Winner: **%s** (%s) (`%4d`)", tournament.Name, tournament.ShortName, entrants, avgWaveText, winnerName, winnerDisplayName, winnerWaveCount)
 		lines = append(lines, line)
 	}
 	if len(lines) == 0 {
@@ -164,7 +166,7 @@ func (q *QBot) getTourneysHistory(cmd Cmd) error {
 	var entries []string
 	for i, tournamentEntry := range tournamentEntries {
 
-		entry := fmt.Sprintf("%d. **<@%s>** - Wave %d", i+1, tournamentEntry.UserId, tournamentEntry.Waves)
+		entry := fmt.Sprintf("%d. **<@%s>** (%s) - Wave %d", i+1, tournamentEntry.UserId, tournamentEntry.DisplayName, tournamentEntry.Waves)
 		entries = append(entries, entry)
 	}
 

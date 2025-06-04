@@ -101,8 +101,8 @@ func (q *QBot) createNewTournament() error {
 	// Generate the full tournament name
 	fullName := fmt.Sprintf("%d %s %d", now.Day(), strings.ToUpper(now.Month().String()), now.Year())
 
-	if err := q.store.InsertTournament(shortName, fullName); err != nil {
-		return errors.Wrap(err, "")
+	if err := q.store.InsertTournament(fullName, shortName); err != nil {
+		return errors.Wrap(err, "inserting new tournament")
 	}
 
 	log.Println("✅ New tournament created:", fullName)
