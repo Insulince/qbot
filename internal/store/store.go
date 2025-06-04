@@ -156,7 +156,9 @@ INSERT INTO tournament_entries
     (guild_id, tournament_id, user_id, username, waves, display_name)
 VALUES
     (?, ?, ?, ?, ?, ?)
-ON CONFLICT (guild_id, tournament_id, user_id) DO UPDATE SET waves = excluded.waves
+ON CONFLICT (guild_id, tournament_id, user_id) DO UPDATE SET
+    waves = excluded.waves,
+    guild_id = excluded.guild_id
 ;`
 
 	if _, err := s.db.Exec(insertWaveSql, guildId, tournamentId, userId, username, waves, displayName); err != nil {
@@ -214,7 +216,6 @@ SELECT
     display_name
 FROM tournament_entries
 WHERE TRUE
-	AND guild_id = ?
 	AND tournament_id = (SELECT MAX(id) FROM tournaments)
 ORDER BY waves DESC
 ;`

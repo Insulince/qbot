@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v1.0.0-cross-server-leaderboard - 4 June 2025
+- Leaderboard should now be cross-server
+
 ### v1.0.0-versions-uptime - 2 June 2025
 - !version now displays bot up time.
 - Official v1.0.0 coming soon :tm:

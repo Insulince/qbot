@@ -16,3 +16,6 @@
 - Add specific `help` sub commands to each command
 - User specific history + graphing?
 - different tiers in tourney tracking
+- !walkie
+- !shame - shame someone who either forgets their turn in the queue, or someone who skips the queue entirely
+- LLM? Local vs API?

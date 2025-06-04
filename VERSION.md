@@ -1,1 +1,1 @@
-v1.0.0-version-uptime
+v1.0.0-cross-server-leaderboard
