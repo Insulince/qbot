@@ -248,7 +248,8 @@ ORDER BY waves DESC
 func (s Store) GetTournamentWinner(guildId string, tournamentId, maxWaves int64) (*models.TournamentEntry, error) {
 	const getTournamentWinnerSql = `
 SELECT
-	user_id
+	user_id,
+	display_name
 FROM tournament_entries
 WHERE TRUE
 	AND guild_id = ?
