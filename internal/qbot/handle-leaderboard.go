@@ -34,7 +34,7 @@ func (q *QBot) handleLeaderboard(cmd Cmd, final bool) error {
 	var entries []string
 	var lastPlaceDisplayName string
 	for i, tournamentEntry := range tournamentEntries {
-		entry := fmt.Sprintf("%d. **<@%s>** (%s) - Wave %d", i, tournamentEntry.UserId, tournamentEntry.DisplayName, tournamentEntry.Waves)
+		entry := fmt.Sprintf("%d. **<@%s>** (%s) - **Wave %d**", i, tournamentEntry.UserId, tournamentEntry.DisplayName, tournamentEntry.Waves)
 		entries = append(entries, entry)
 
 		lastPlaceDisplayName = tournamentEntry.DisplayName // Keep track of the last user

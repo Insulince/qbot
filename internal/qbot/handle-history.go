@@ -166,7 +166,7 @@ func (q *QBot) getTourneysHistory(cmd Cmd) error {
 	var entries []string
 	for i, tournamentEntry := range tournamentEntries {
 
-		entry := fmt.Sprintf("%d. **<@%s>** (%s) - Wave %d", i+1, tournamentEntry.UserId, tournamentEntry.DisplayName, tournamentEntry.Waves)
+		entry := fmt.Sprintf("%d. **<@%s>** (%s) - **Wave %d**", i+1, tournamentEntry.UserId, tournamentEntry.DisplayName, tournamentEntry.Waves)
 		entries = append(entries, entry)
 	}
 
