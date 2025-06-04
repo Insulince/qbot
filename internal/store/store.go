@@ -259,13 +259,15 @@ LIMIT 1
 ;`
 
 	var userId string
-	err := s.db.QueryRow(getTournamentWinnerSql, guildId, tournamentId, maxWaves).Scan(&userId)
+	var displayName string
+	err := s.db.QueryRow(getTournamentWinnerSql, guildId, tournamentId, maxWaves).Scan(&userId, &displayName)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying tournament winner")
 	}
 
 	tournamentEntry := new(models.TournamentEntry)
 	tournamentEntry.UserId = userId
+	tournamentEntry.DisplayName = displayName
 
 	return tournamentEntry, nil
 }
