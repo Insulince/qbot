@@ -25,7 +25,7 @@ func (q *QBot) handleLeaderboard(cmd Cmd, final bool) error {
 		channelId = cmd.Message.ChannelID
 	}
 
-	tournamentEntries, err := q.store.GetLatestTournamentEntries(cmd.GuildId)
+	tournamentEntries, err := q.store.GetLatestTournamentEntries()
 	if err != nil {
 		return errors.Wrap(err, "getting latest tournament entries")
 	}

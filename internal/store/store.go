@@ -168,7 +168,7 @@ ON CONFLICT (tournament_id, user_id) DO UPDATE SET
 	return nil
 }
 
-func (s Store) GetTournamentEntries(guildId string, tournamentId int64) ([]*models.TournamentEntry, error) {
+func (s Store) GetTournamentEntries(tournamentId int64) ([]*models.TournamentEntry, error) {
 	const getTournamentEntriesSql = `
 SELECT
     user_id,
@@ -177,12 +177,11 @@ SELECT
     display_name
 FROM tournament_entries
 WHERE TRUE
-	AND guild_id = ?
 	AND tournament_id = ?
 ORDER BY waves DESC
 ;`
 
-	tournamentEntriesRows, err := s.db.Query(getTournamentEntriesSql, guildId, tournamentId)
+	tournamentEntriesRows, err := s.db.Query(getTournamentEntriesSql, tournamentId)
 	if err != nil {
 		return nil, errors.Wrap(err, "get tournament entries")
 	}
@@ -207,7 +206,7 @@ ORDER BY waves DESC
 	return tournamentEntries, nil
 }
 
-func (s Store) GetLatestTournamentEntries(guildId string) ([]*models.TournamentEntry, error) {
+func (s Store) GetLatestTournamentEntries() ([]*models.TournamentEntry, error) {
 	const getLatestTournamentEntriesSql = `
 SELECT
     user_id,
@@ -220,7 +219,7 @@ WHERE TRUE
 ORDER BY waves DESC
 ;`
 
-	rows, err := s.db.Query(getLatestTournamentEntriesSql, guildId)
+	rows, err := s.db.Query(getLatestTournamentEntriesSql)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying latest tournament entries")
 	}
@@ -245,14 +244,13 @@ ORDER BY waves DESC
 	return tournamentEntries, nil
 }
 
-func (s Store) GetTournamentWinner(guildId string, tournamentId, maxWaves int64) (*models.TournamentEntry, error) {
+func (s Store) GetTournamentWinner(tournamentId, maxWaves int64) (*models.TournamentEntry, error) {
 	const getTournamentWinnerSql = `
 SELECT
 	user_id,
 	display_name
 FROM tournament_entries
 WHERE TRUE
-	AND guild_id = ?
 	AND tournament_id = ?
 	AND waves = ?
 LIMIT 1
@@ -260,7 +258,7 @@ LIMIT 1
 
 	var userId string
 	var displayName string
-	err := s.db.QueryRow(getTournamentWinnerSql, guildId, tournamentId, maxWaves).Scan(&userId, &displayName)
+	err := s.db.QueryRow(getTournamentWinnerSql, tournamentId, maxWaves).Scan(&userId, &displayName)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying tournament winner")
 	}
@@ -272,7 +270,7 @@ LIMIT 1
 	return tournamentEntry, nil
 }
 
-func (s Store) GetTournamentStats(guildId string, tournamentId int64) (entrants int, maxWaves *int64, averageWaves *float64, _ error) {
+func (s Store) GetTournamentStats(tournamentId int64) (entrants int, maxWaves *int64, averageWaves *float64, _ error) {
 	const tournamentStatsSql = `
 SELECT
 	COUNT(*) as entrants,
@@ -280,13 +278,12 @@ SELECT
 	AVG(waves) as avg_waves
 FROM tournament_entries
 WHERE TRUE
-	AND guild_id = ?
 	AND tournament_id = ?
 ;`
 
 	var maxWavesNullable sql.NullInt64
 	var averageWavesNullable sql.NullFloat64
-	if err := s.db.QueryRow(tournamentStatsSql, guildId, tournamentId).Scan(&entrants, &maxWavesNullable, &averageWavesNullable); err != nil {
+	if err := s.db.QueryRow(tournamentStatsSql, tournamentId).Scan(&entrants, &maxWavesNullable, &averageWavesNullable); err != nil {
 		return 0, nil, nil, errors.Wrap(err, "query tournament stats")
 	}
 

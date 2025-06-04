@@ -84,7 +84,7 @@ func (q *QBot) getTourneyList(cmd Cmd) error {
 
 	var lines []string
 	for _, tournament := range tournaments {
-		entrants, maxWaves, averageWaves, err := q.store.GetTournamentStats(cmd.GuildId, tournament.Id)
+		entrants, maxWaves, averageWaves, err := q.store.GetTournamentStats(tournament.Id)
 		if err != nil {
 			return errors.Wrap(err, "getting tournament stats")
 		}
@@ -94,7 +94,7 @@ func (q *QBot) getTourneyList(cmd Cmd) error {
 		winnerDisplayName := "_No winner_"
 		winnerWaveCount := 0
 		if maxWaves != nil && entrants > 0 {
-			tournamentWinner, err := q.store.GetTournamentWinner(cmd.GuildId, tournament.Id, *maxWaves)
+			tournamentWinner, err := q.store.GetTournamentWinner(tournament.Id, *maxWaves)
 			if err != nil {
 				return errors.Wrap(err, "get tournament winner")
 			}
@@ -157,7 +157,7 @@ func (q *QBot) getTourneysHistory(cmd Cmd) error {
 		return errors.Wrap(err, "getting tournament by short name")
 	}
 
-	tournamentEntries, err := q.store.GetTournamentEntries(cmd.GuildId, tournament.Id)
+	tournamentEntries, err := q.store.GetTournamentEntries(tournament.Id)
 	if err != nil {
 		return errors.Wrap(err, "getting tournament entries")
 	}

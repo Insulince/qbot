@@ -44,10 +44,10 @@ type Store interface {
 	CountTournaments() (int, error)
 
 	InsertTournamentEntry(guildId string, tournamentId int64, userId, username, displayName string, waves int) error
-	GetTournamentEntries(guildId string, tournamentId int64) ([]*models.TournamentEntry, error)
-	GetLatestTournamentEntries(guildId string) ([]*models.TournamentEntry, error)
-	GetTournamentWinner(guildId string, tournamentId int64, maxWaves int64) (*models.TournamentEntry, error)
-	GetTournamentStats(guildId string, tournamentId int64) (entrants int, maxWaves *int64, averageWaves *float64, _ error)
+	GetTournamentEntries(tournamentId int64) ([]*models.TournamentEntry, error)
+	GetLatestTournamentEntries() ([]*models.TournamentEntry, error)
+	GetTournamentWinner(tournamentId int64, maxWaves int64) (*models.TournamentEntry, error)
+	GetTournamentStats(tournamentId int64) (entrants int, maxWaves *int64, averageWaves *float64, _ error)
 
 	io.Closer
 }
