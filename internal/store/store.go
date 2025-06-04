@@ -156,7 +156,7 @@ INSERT INTO tournament_entries
     (guild_id, tournament_id, user_id, username, waves, display_name)
 VALUES
     (?, ?, ?, ?, ?, ?)
-ON CONFLICT (guild_id, tournament_id, user_id) DO UPDATE SET
+ON CONFLICT (tournament_id, user_id) DO UPDATE SET
     waves = excluded.waves,
     guild_id = excluded.guild_id
 ;`
