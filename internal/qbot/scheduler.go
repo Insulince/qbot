@@ -1,13 +1,13 @@
 package qbot
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/Insulince/jlib/pkg/jmust"
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 )
@@ -61,39 +61,37 @@ func (q *QBot) startScheduler() error {
 func (q *QBot) announceMessage(key, msg string) error {
 	const everyonePath = "/app/assets/everyone.png"
 
+	data, err := os.ReadFile(everyonePath)
+	if err != nil {
+		return errors.Wrapf(err, "read everyone image %q", everyonePath)
+	}
+
 	for _, g := range q.guilds {
-		file, err := os.Open(everyonePath)
-		if err != nil {
-			q.mustPost(g.AnnouncementChannelId, "❌ Error: Could not open everyone image.")
-			return errors.Wrapf(err, "open everyone image %q", everyonePath)
-		}
-		defer jmust.MustClose(file)
-
-		switch g.AudienceIdentifier {
-		case "everyone":
-			msg = fmt.Sprintf("@%s %s", g.AudienceIdentifier, msg)
-		default:
-			msg = fmt.Sprintf("<@&%s> %s", g.AudienceIdentifier, msg)
+		var mentionMsg string
+		if g.AudienceIdentifier == "everyone" {
+			mentionMsg = fmt.Sprintf("@%s %s", g.AudienceIdentifier, msg)
+		} else {
+			mentionMsg = fmt.Sprintf("<@&%s> %s", g.AudienceIdentifier, msg)
 		}
 
-		// Create a message with the image
+		reader := bytes.NewReader(data)
+
 		message := &discordgo.MessageSend{
-			Content: msg,
+			Content: mentionMsg,
 			Files: []*discordgo.File{
 				{
 					Name:   "everyone.png",
-					Reader: file,
+					Reader: reader,
 				},
 			},
 		}
 
-		// Send the message with the image
 		if _, err = q.session.ChannelMessageSendComplex(g.AnnouncementChannelId, message); err != nil {
 			q.mustPost(g.AnnouncementChannelId, "❌ Error: Failed to send announcement message and image.")
 			return errors.Wrapf(err, "send announcement message and image")
 		}
 
-		log.Printf("[%s] Scheduled message sent to guild %q: %q\n", key, g.Name, msg)
+		log.Printf("[%s] Scheduled message sent to guild %q: %q\n", key, g.Name, mentionMsg)
 	}
 
 	return nil

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### v1.0.0 - 4 June 2025
+- After a full cross-server tourney cycle, it feels like it's time to mark this as 1.0.0!
+- Fix bug in @everyone mentions
+
 ### v1.0.0-cross-server-leaderboard - 4 June 2025
 - Leaderboard should now be cross-server
 - History is no longer partitioned by server either

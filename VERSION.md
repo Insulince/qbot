@@ -1,1 +1,1 @@
-v1.0.0-cross-server-leaderboard
+v1.0.0
