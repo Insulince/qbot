@@ -32,6 +32,7 @@ type (
 	GuildConfig struct {
 		Name                  string `json:"name"`
 		AnnouncementChannelId string `json:"announcementChannelId"`
+		AudienceIdentifier    string `json:"audienceIdentifier"`
 	}
 )
 

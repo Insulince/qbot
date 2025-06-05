@@ -19,3 +19,4 @@
 - !walkie
 - !shame - shame someone who either forgets their turn in the queue, or someone who skips the queue entirely
 - LLM? Local vs API?
+- announce when bot is started

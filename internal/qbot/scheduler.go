@@ -15,16 +15,16 @@ import (
 // Schedule of announcements (UTC time)
 var schedule = map[string]string{
 	// Saturday tourney
-	"Saturday 00:00": "@everyone Tournament signups are now open! Use `!queue` to join",
-	"Saturday 23:00": "@everyone 1-hour warning! Tournament runs close soon",
-	"Sunday 00:00":   "@everyone Tournament runs are now closed",
-	"Sunday 04:00":   "@everyone Tournament has ended, rewards are being distributed",
+	"Saturday 00:00": "Tournament signups are now open! Use `!queue` to join",
+	"Saturday 23:00": "1-hour warning! Tournament runs close soon",
+	"Sunday 00:00":   "Tournament runs are now closed",
+	"Sunday 04:00":   "Tournament has ended, rewards are being distributed",
 
 	// Wednesday tourney
-	"Wednesday 00:00": "@everyone Tournament signups are now open! Use `!queue` to join",
-	"Wednesday 23:00": "@everyone 1-hour warning! Tournament runs close soon",
-	"Thursday 00:00":  "@everyone Tournament runs are now closed",
-	"Thursday 04:00":  "@everyone Tournament has ended, rewards are being distributed",
+	"Wednesday 00:00": "Tournament signups are now open! Use `!queue` to join",
+	"Wednesday 23:00": "1-hour warning! Tournament runs close soon",
+	"Thursday 00:00":  "Tournament runs are now closed",
+	"Thursday 04:00":  "Tournament has ended, rewards are being distributed",
 }
 
 // Function to check the time and send messages
@@ -68,6 +68,13 @@ func (q *QBot) announceMessage(key, msg string) error {
 			return errors.Wrapf(err, "open everyone image %q", everyonePath)
 		}
 		defer jmust.MustClose(file)
+
+		switch g.AudienceIdentifier {
+		case "everyone":
+			msg = fmt.Sprintf("@%s %s", g.AudienceIdentifier, msg)
+		default:
+			msg = fmt.Sprintf("<@&%s> %s", g.AudienceIdentifier, msg)
+		}
 
 		// Create a message with the image
 		message := &discordgo.MessageSend{

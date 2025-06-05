@@ -39,6 +39,8 @@ test:
 ssh:
     echo For running SQL queries do:
     echo sqlite3 /var/lib/litefs/qbot.db
+    echo For editing config do:
+    echo apt-get update && apt-get install vim -y && vim /var/lib/litefs/qbot/config.json
     fly ssh console -a qbot
 
 # Recipe backup will run backup.bat which copies the sqlite db file from fly to the local machine.

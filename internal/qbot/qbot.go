@@ -68,6 +68,7 @@ func New(cfg config.Config, s Store) (*QBot, error) {
 		var g Guild
 		g.Name = cg.Name
 		g.AnnouncementChannelId = cg.AnnouncementChannelId
+		g.AudienceIdentifier = cg.AudienceIdentifier
 		q.guilds[id] = g
 	}
 

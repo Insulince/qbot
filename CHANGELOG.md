@@ -4,6 +4,7 @@
 - Leaderboard should now be cross-server
 - History is no longer partitioned by server either
 - Fixed bug in tourney naming
+- @everyone announcements are now configurable to use roles instead
 
 ### v1.0.0-versions-uptime - 2 June 2025
 - !version now displays bot up time.

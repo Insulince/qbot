@@ -10,8 +10,7 @@ type Guilds map[string]Guild
 type Guild struct {
 	Name                  string
 	AnnouncementChannelId string
-	ErrorChannelId        string
-	NotificationRoleId    string
+	AudienceIdentifier    string
 }
 
 func (gs Guilds) Get(guildId string) (Guild, error) {
