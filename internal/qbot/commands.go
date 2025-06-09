@@ -61,9 +61,9 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 		switch cmd.Command {
 		case `!queue`, `!q`, `!enqueue`, `!join`:
 			return q.handleQueue(cmd)
-		case `!enter`, `!enterbracket`:
+		case `!enter`, `!enterbracket`, `!e`:
 			return q.handleEnter(cmd)
-		case `!full`, `!bracketfull`:
+		case `!full`, `!bracketfull`, `!f`:
 			return q.handleFull(cmd)
 		case `!view`, `!viewqueue`:
 			return q.handleView(cmd)
@@ -85,7 +85,7 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 			return q.handleRemove(cmd)
 		case `!moretime`, `!extend`, `!moar`:
 			return q.handleMoreTime(cmd)
-		case `!submitwave`, `!submitwaves`, `!wave`, `!waves`:
+		case `!submitwave`, `!submitwaves`, `!wave`, `!waves`, `!w`:
 			return q.handleSubmitWave(cmd)
 		case `!leaderboard`, `!lb`:
 			return q.handleLeaderboard(cmd, false)
@@ -111,6 +111,10 @@ func (q *QBot) interpretMessage(m *discordgo.MessageCreate) (Cmd, error) {
 
 	// Remove spaces from the left of the message.
 	content = strings.TrimLeftFunc(content, unicode.IsSpace)
+
+	if strings.HasPrefix(content, "❗") || strings.HasPrefix(content, "❕") {
+		content = "!" + content[3:]
+	}
 
 	// Check that the message begins with an exclamation mark.
 	if !strings.HasPrefix(content, "!") {

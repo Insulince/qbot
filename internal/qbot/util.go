@@ -77,11 +77,13 @@ func (q *QBot) timeoutChecker() error {
 	defer ticker.Stop()
 	for range ticker.C {
 		q.queueMutex.Lock()
-		if q.currentUser != nil {
+		if len(q.queue) > 0 {
+			// The first user in the queue is the active user
+			activeUser := &q.queue[0]
 			var allowedTimeout time.Duration
 			var phase string
 
-			if !q.currentUser.Entered {
+			if !activeUser.Entered {
 				allowedTimeout = q.enterTimeout
 				phase = "waiting to enter"
 			} else {
@@ -89,25 +91,29 @@ func (q *QBot) timeoutChecker() error {
 				phase = "waiting to complete your bracket"
 			}
 
-			elapsed := time.Since(q.currentUser.AddedAt)
+			elapsed := time.Since(activeUser.AddedAt)
 
 			// Send a warning if within the warning threshold and not yet warned.
-			if !q.currentUser.Warned && elapsed >= allowedTimeout-q.warnThreshold {
-				q.mustPost(q.currentUser.ChannelID, fmt.Sprintf("<@%s>, you have two minutes left (%s). Please update your status or use `!moretime` to extend the deadline.", q.currentUser.UserID, phase))
-				q.currentUser.Warned = true
+			if !activeUser.Warned && elapsed >= allowedTimeout-q.warnThreshold {
+				q.mustPost(activeUser.ChannelID, fmt.Sprintf("<@%s>, you have two minutes left (%s). Please update your status or use `!moretime` to extend the deadline.", activeUser.UserID, phase))
+				activeUser.Warned = true
 			}
 
 			// Timeout and promote the next user if the allowed timeout is exceeded.
 			if elapsed > allowedTimeout {
-				q.mustPost(q.currentUser.ChannelID, fmt.Sprintf("<@%s> timed out (%s). Moving to the next person in the queue.", q.currentUser.UserID, phase))
-				q.currentUser = nil
+				q.mustPost(activeUser.ChannelID, fmt.Sprintf("<@%s> timed out (%s). Moving to the next person in the queue.", activeUser.UserID, phase))
+
+				// Remove the active user
+				q.queue = q.queue[1:]
+
+				// If there's a new active user, notify them
 				if len(q.queue) > 0 {
-					next := q.queue[0]
-					q.queue = q.queue[1:]
-					next.AddedAt = time.Now()
-					next.Warned = false
-					q.currentUser = &next
-					q.mustPost(next.ChannelID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", next.UserID))
+					// Reset the timer for the new active user
+					q.queue[0].AddedAt = time.Now()
+					q.queue[0].Warned = false
+					q.mustPost(q.queue[0].ChannelID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", q.queue[0].UserID))
+				} else {
+					q.mustPost(q.queue[0].ChannelID, fmt.Sprintf("The queue is empty. Use `!queue` to join!"))
 				}
 			}
 		}

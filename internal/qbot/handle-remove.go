@@ -36,30 +36,34 @@ func (q *QBot) handleRemove(cmd Cmd) error {
 
 	q.queueMutex.Lock()
 	defer q.queueMutex.Unlock()
+
+	// Check if the user is in the queue
 	removed := false
-	if q.currentUser != nil && q.currentUser.UserID == userID {
-		q.currentUser = nil
-		removed = true
-	}
+	wasActive := false
 	var newQueue []QueueItem
-	for _, item := range q.queue {
+
+	for i, item := range q.queue {
 		if item.UserID == userID {
 			removed = true
+			if i == 0 {
+				wasActive = true
+			}
 		} else {
 			newQueue = append(newQueue, item)
 		}
 	}
+
 	q.queue = newQueue
+
 	if removed {
-		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("User <@%s> has been removed from the queue.", userID))
-		// If the active user was removed, promote the next one.
-		if q.currentUser == nil && len(q.queue) > 0 {
-			next := q.queue[0]
-			q.queue = q.queue[1:]
-			next.AddedAt = time.Now()
-			next.Warned = false
-			q.currentUser = &next
-			q.mustPost(next.ChannelID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", next.UserID))
+		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s> has been removed from the queue.", userID))
+
+		// If the active user was removed, notify the new active user
+		if wasActive && len(q.queue) > 0 {
+			// Reset the timer for the new active user
+			q.queue[0].AddedAt = time.Now()
+			q.queue[0].Warned = false
+			q.mustPost(q.queue[0].ChannelID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", q.queue[0].UserID))
 		}
 	} else {
 		q.mustPost(cmd.Message.ChannelID, "User not found in the queue.")

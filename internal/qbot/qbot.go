@@ -31,9 +31,8 @@ type QBot struct {
 	started time.Time
 	session *discordgo.Session
 
-	queue       []QueueItem
-	queueMutex  sync.Mutex
-	currentUser *QueueItem
+	queue      []QueueItem
+	queueMutex sync.Mutex
 }
 
 type Store interface {

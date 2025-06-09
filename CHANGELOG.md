@@ -1,5 +1,11 @@
 # CHANGELOG
 
+### v1.1.0 - 9 June 2025
+- Remove the concept of an active position entirely, now there's just the queue, and if you are at the first position it is currently your turn.
+- Make it painfully clear that it is NOT your turn to join if it isn't (and vice versa).
+- Attempted to improve some wording to reflect these changes and demystify the process.
+- New abbreviations for common commands, !e for enter, !f for full, !w for waves.
+
 ### v1.0.0 - 4 June 2025
 - After a full cross-server tourney cycle, it feels like it's time to mark this as 1.0.0!
 - Fix bug in @everyone mentions

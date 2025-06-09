@@ -9,7 +9,6 @@ func (q *QBot) handleReset(cmd Cmd) error {
 
 	q.queueMutex.Lock()
 	defer q.queueMutex.Unlock()
-	q.currentUser = nil
 	q.queue = []QueueItem{}
 	q.mustPost(cmd.Message.ChannelID, "Queue has been reset.")
 

@@ -10,9 +10,7 @@
 - need to ensure that when an error occurs, the bot doesnt just stay silent, but tells the user something went wrong
 - announcement system? announce when timed things reset? daily missions are released, crates reset, event starts, etc.?
 - !roast
-- Give warning message when the queue is NOT empty and someone enqueues so that they dont think they can just auto-join like they can 99% of the time
 - command to extract a players progress out of past tournament results. Something like !progress <username>, and it would scan over all tournament entries for that player and output them, maybe with a delta or something
-- DB backups
 - Add specific `help` sub commands to each command
 - User specific history + graphing?
 - different tiers in tourney tracking
@@ -20,3 +18,5 @@
 - !shame - shame someone who either forgets their turn in the queue, or someone who skips the queue entirely
 - LLM? Local vs API?
 - announce when bot is started
+- Can !enter be skipped entirely, and !q just assumes you have already joined?
+- cross-server interactions are confusing, it needs to be tightened up if this is going to work
