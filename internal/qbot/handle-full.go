@@ -10,8 +10,26 @@ func (q *QBot) handleFull(cmd Cmd) error {
 	q.queueMutex.Lock()
 	defer q.queueMutex.Unlock()
 
+	// Check if the user is the active player (first in queue)
 	if len(q.queue) == 0 || q.queue[0].UserID != cmd.Message.Author.ID {
-		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, it's not your turn.", cmd.Message.Author.ID))
+		// Check if the user is in the queue at all
+		inQueue := false
+		position := 0
+		for i, item := range q.queue {
+			if item.UserID == cmd.Message.Author.ID {
+				inQueue = true
+				position = i
+				break
+			}
+		}
+
+		if inQueue {
+			// User is in the queue but not active yet
+			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, you are currently in the queue at position %d. Please wait for your turn before using `!full`.", cmd.Message.Author.ID, position))
+		} else {
+			// User is not in the queue at all
+			q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, you are not currently in the queue. Use `!queue` to join.", cmd.Message.Author.ID))
+		}
 		return nil
 	}
 
@@ -20,7 +38,7 @@ func (q *QBot) handleFull(cmd Cmd) error {
 		return nil
 	}
 
-	q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, your bracket is now full. Removing you from the queue.", cmd.Message.Author.ID))
+	q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s>, noted that your bracket is now full. Removing you from the queue.", cmd.Message.Author.ID))
 
 	// Remove the active user from the queue
 	q.queue = q.queue[1:]
