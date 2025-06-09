@@ -8,6 +8,8 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
+
+	"github.com/Insulince/qbot/internal/version"
 )
 
 // Send an error message to Discord
@@ -101,19 +103,20 @@ func (q *QBot) timeoutChecker() error {
 
 			// Timeout and promote the next user if the allowed timeout is exceeded.
 			if elapsed > allowedTimeout {
-				q.mustPost(activeUser.ChannelID, fmt.Sprintf("<@%s> timed out (%s). Moving to the next person in the queue.", activeUser.UserID, phase))
+				q.mustPost(activeUser.ChannelID, fmt.Sprintf("<@%s> timed out (%s).", activeUser.UserID, phase))
 
 				// Remove the active user
 				q.queue = q.queue[1:]
 
 				// If there's a new active user, notify them
 				if len(q.queue) > 0 {
+					q.mustPostWithoutTags(activeUser.ChannelID, fmt.Sprintf("Continuing to next user in queue, <@%s> (may be in different server)", q.queue[0].UserID))
 					// Reset the timer for the new active user
 					q.queue[0].AddedAt = time.Now()
 					q.queue[0].Warned = false
-					q.mustPost(q.queue[0].ChannelID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", q.queue[0].UserID))
+					q.sendPass(q.queue[0].ChannelID, q.queue[0].UserID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", q.queue[0].UserID))
 				} else {
-					q.mustPost(q.queue[0].ChannelID, fmt.Sprintf("The queue is empty. Use `!queue` to join!"))
+					q.mustPost(activeUser.ChannelID, fmt.Sprintf("The queue is empty. Use `!queue` to join!"))
 				}
 			}
 		}
@@ -146,4 +149,8 @@ func (q *QBot) GetDisplayName(msg *discordgo.MessageCreate) (string, error) {
 	}
 
 	return member.User.Username, nil
+}
+
+func (q *QBot) mustAnnounceStart() {
+	q.mustPost(q.errorChannelId, fmt.Sprintf("Q %s started at %v!", version.MustGet(), time.Now().UTC()))
 }

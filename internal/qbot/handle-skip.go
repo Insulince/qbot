@@ -30,7 +30,7 @@ func (q *QBot) handleSkip(cmd Cmd) error {
 		// Reset the timer for the new active user
 		q.queue[0].AddedAt = time.Now()
 		q.queue[0].Warned = false
-		q.mustPost(q.queue[0].ChannelID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", q.queue[0].UserID))
+		q.sendPass(q.queue[0].ChannelID, q.queue[0].UserID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", q.queue[0].UserID))
 	}
 
 	return nil

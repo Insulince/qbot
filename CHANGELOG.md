@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### v1.1.1 - 9 June 2025
+- Tried to find more spots to use the bouncer images, since users can be promoted to the active user in a number of disparate ways.
+- Added an announcement message for Q in the error channel when it starts up.
+
 ### v1.1.0 - 9 June 2025
 - Remove the concept of an active position entirely, now there's just the queue, and if you are at the first position it is currently your turn.
 - Make it painfully clear that it is NOT your turn to join if it isn't (and vice versa).

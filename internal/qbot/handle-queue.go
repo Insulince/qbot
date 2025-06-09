@@ -31,9 +31,9 @@ func (q *QBot) handleQueue(cmd Cmd) error {
 	for i, item := range q.queue {
 		if item.UserID == cmd.Message.Author.ID {
 			if i == 0 {
-				q.sendImageMessage(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s>, you are already first in queue and **it is currently your turn**! Please use `!enter` or `!full` as appropriate.", cmd.Message.Author.ID), passPath, "pass.png")
+				q.sendPass(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s>, you are already first in queue and **it is currently your turn**! Please use `!enter` or `!full` as appropriate.", cmd.Message.Author.ID))
 			} else {
-				q.sendImageMessage(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s> 🚨 **DO NOT JOIN YET!** 🚨 You are already in the queue in position %d. Please wait for your turn, you will be pinged here when the time comes.\n_Players ahead of you:_\n%s", cmd.Message.Author.ID, i+1, q.formatPlayersAhead(i)), blockPath, "block.png")
+				q.sendBlock(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s> 🚨 **DO NOT JOIN YET!** 🚨 You are already in the queue in position %d. Please wait for your turn, you will be pinged here when the time comes.\n_Players ahead of you:_\n%s", cmd.Message.Author.ID, i+1, q.formatPlayersAhead(i)))
 			}
 			return nil
 		}
@@ -51,9 +51,9 @@ func (q *QBot) handleQueue(cmd Cmd) error {
 	q.queue = append(q.queue, newItem)
 
 	if len(q.queue) == 1 {
-		q.sendImageMessage(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s>, you've been added to the queue and you're first so **it is now your turn**! Type `!enter` once you join your bracket.", cmd.Message.Author.ID), passPath, "pass.png")
+		q.sendPass(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s>, you've been added to the queue and you're first so **it is now your turn**! Type `!enter` once you join your bracket.", cmd.Message.Author.ID))
 	} else {
-		q.sendImageMessage(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s> 🚨 **DO NOT JOIN YET!** 🚨 You've been added to the queue in position %d.\nPlease wait for your turn, you will be pinged here when the time comes.\n_Players ahead of you:_\n%s", cmd.Message.Author.ID, len(q.queue), q.formatPlayersAhead(len(q.queue)-1)), blockPath, "block.png")
+		q.sendBlock(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s> 🚨 **DO NOT JOIN YET!** 🚨 You've been added to the queue in position %d.\nPlease wait for your turn, you will be pinged here when the time comes.\n_Players ahead of you:_\n%s", cmd.Message.Author.ID, len(q.queue), q.formatPlayersAhead(len(q.queue)-1)))
 	}
 
 	return nil
@@ -102,4 +102,16 @@ func (q *QBot) sendImageMessage(channelID, userId, content, imagePath, imageName
 	if err != nil {
 		q.mustPost(channelID, "❌ Error: Failed to send image.")
 	}
+}
+
+func (q *QBot) sendPass(channelId, userId, msg string) {
+	const passPath = "/app/assets/pass-smaller.png"
+
+	q.sendImageMessage(channelId, userId, msg, passPath, "pass.png")
+}
+
+func (q *QBot) sendBlock(channelId, userId, msg string) {
+	const blockPath = "/app/assets/block-smaller.png"
+
+	q.sendImageMessage(channelId, userId, msg, blockPath, "block.png")
 }

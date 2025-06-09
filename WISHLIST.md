@@ -17,6 +17,5 @@
 - !walkie
 - !shame - shame someone who either forgets their turn in the queue, or someone who skips the queue entirely
 - LLM? Local vs API?
-- announce when bot is started
 - Can !enter be skipped entirely, and !q just assumes you have already joined?
 - cross-server interactions are confusing, it needs to be tightened up if this is going to work

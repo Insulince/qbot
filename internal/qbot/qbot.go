@@ -117,6 +117,7 @@ func (q *QBot) run(ctx context.Context) error {
 
 	fmt.Println("Q is running")
 	q.started = time.Now()
+	q.mustAnnounceStart()
 
 	select {
 	case <-ctx.Done():

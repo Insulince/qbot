@@ -27,10 +27,11 @@ func (q *QBot) handleFull(cmd Cmd) error {
 
 	// If there's a new active user, notify them
 	if len(q.queue) > 0 {
+		q.mustPostWithoutTags(cmd.Message.ChannelID, fmt.Sprintf("Continuing to next user in queue, <@%s> (may be in different server)", q.queue[0].UserID))
 		// Reset the timer for the new active user
 		q.queue[0].AddedAt = time.Now()
 		q.queue[0].Warned = false
-		q.mustPost(q.queue[0].ChannelID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", q.queue[0].UserID))
+		q.sendPass(q.queue[0].ChannelID, q.queue[0].UserID, fmt.Sprintf("<@%s>, it's now your turn! Please type `!enter` once you join your bracket.", q.queue[0].UserID))
 	}
 
 	return nil
