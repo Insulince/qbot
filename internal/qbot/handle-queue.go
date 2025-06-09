@@ -33,7 +33,7 @@ func (q *QBot) handleQueue(cmd Cmd) error {
 			if i == 0 {
 				q.sendPass(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s>, you are already first in queue and **it is currently your turn**! Please use `!enter` or `!full` as appropriate.", cmd.Message.Author.ID))
 			} else {
-				q.sendBlock(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s> 🚨 **DO NOT JOIN YET!** 🚨 You are already in the queue in position %d. Please wait for your turn, you will be pinged here when the time comes.\n_Players ahead of you:_\n%s", cmd.Message.Author.ID, i+1, q.formatPlayersAhead(i)))
+				q.sendBlock(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s> 🚨 **DO NOT JOIN YET!** 🚨 You are already in the queue in position %d. Please wait for your turn, you will be pinged here when the time comes.\n_Players ahead of you:_ %s", cmd.Message.Author.ID, i+1, q.formatPlayersAhead(i)))
 			}
 			return nil
 		}
@@ -53,7 +53,7 @@ func (q *QBot) handleQueue(cmd Cmd) error {
 	if len(q.queue) == 1 {
 		q.sendPass(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s>, you've been added to the queue and you're first so **it is now your turn**! Type `!enter` once you join your bracket.", cmd.Message.Author.ID))
 	} else {
-		q.sendBlock(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s> 🚨 **DO NOT JOIN YET!** 🚨 You've been added to the queue in position %d.\nPlease wait for your turn, you will be pinged here when the time comes.\n_Players ahead of you:_\n%s", cmd.Message.Author.ID, len(q.queue), q.formatPlayersAhead(len(q.queue)-1)))
+		q.sendBlock(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s> 🚨 **DO NOT JOIN YET!** 🚨 You've been added to the queue in position %d.\nPlease wait for your turn, you will be pinged here when the time comes.\n_Players ahead of you:_ %s", cmd.Message.Author.ID, len(q.queue), q.formatPlayersAhead(len(q.queue)-1)))
 	}
 
 	return nil
