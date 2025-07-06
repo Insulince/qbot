@@ -19,3 +19,14 @@
 - LLM? Local vs API?
 - Can !enter be skipped entirely, and !q just assumes you have already joined?
 - cross-server interactions are confusing, it needs to be tightened up if this is going to work
+- john travolta looking aorund meme when someone times out
+- "this is fine" when someone !enter out of turn
+- unify the message sending process into a single `post` and `mustPost` function that accepts options for enabling different functionalities. Consider making it its own package.
+- humanization of repsonses via llm
+- humanize only a % of the time to keep the feeling consistent, maybe 50% of the time
+- use placeholders for things which shoudl not be replaced, and swap them in after
+  - Rewrite the following message to sound more natural and conversational by mildly varying the wording and sentence structure, but do not change the meaning in any way. Preserve all markdown formatting such as asterisks (*) and underscores (_). Keep any numbers, usernames, and special terms exactly the same. Make sure the message remains clear and accurate.*
+- leaderboard messages are now so long that they get cutoff mid-name
+- 
+- !q outside of tourney times should meme the dude tryna use it
+- levenshtein distance

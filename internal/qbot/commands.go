@@ -87,6 +87,8 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 			return q.handleMoreTime(cmd)
 		case `!submitwave`, `!submitwaves`, `!wave`, `!waves`, `!w`:
 			return q.handleSubmitWave(cmd)
+		case `!forcewave`:
+			return q.handleForceWave(cmd)
 		case `!leaderboard`, `!lb`:
 			return q.handleLeaderboard(cmd, false)
 		case `!owned`:
@@ -102,6 +104,7 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 	}()
 
 	if err != nil {
+		q.mustPost(m.ChannelID, "Could not process command, an error occurred and has been logged, contact a Q-Dev for assistance.")
 		q.reportError(err)
 	}
 }

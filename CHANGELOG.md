@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### v1.1.2 - 5 July 2025
+- Add `!forcewave` moderator command.
+- Add generic error response message when an error occurs so the user isn't left hanging.
+
 ### v1.1.1 - 9 June 2025
 - Tried to find more spots to use the bouncer images, since users can be promoted to the active user in a number of disparate ways.
 - Added an announcement message for Q in the error channel when it starts up.

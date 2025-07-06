@@ -20,6 +20,12 @@ func (q *QBot) handleCommands(cmd Cmd) error {
 		"  └ Usage: `!history` (recent tournaments)\n" +
 		"  └ Usage: `!history 2024-03-15` (specific tournament)\n" +
 		"\n" +
+		"🛡️ **Moderator Commands**\n" +
+		"• `!forcewave <@user> <number>` - Force-overwrite a player's wave count for the current tournament\n" +
+		"• `!remove <@user>` - Remove a user from the queue\n" +
+		"• `!reset` - Reset the queue\n" +
+		"• `!skip` - Skip the current user in the queue\n" +
+		"\n" +
 		"ℹ️ **Help & Information**\n" +
 		"• `!help` - Display help message + commands\n" +
 		"• `!commands` - Display summary of available commands\n" +
