@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v1.1.3 - 23 July 2025
+- Kara had to go and push tourney beyond 10k waves, so here I go upping the limit
+
 ### v1.1.2 - 5 July 2025
 - Add `!forcewave` moderator command.
 - Add generic error response message when an error occurs so the user isn't left hanging.

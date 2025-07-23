@@ -27,8 +27,8 @@ func (q *QBot) handleSubmitWave(cmd Cmd) error {
 	if err != nil {
 		return errors.Wrapf(err, "converting waves %q to int", wavesStr)
 	}
-	if waves < 1 || waves > 10000 {
-		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s> Please enter a valid wave number between 1 and 10000.", id))
+	if waves < 1 || waves > 100000 {
+		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("<@%s> Please enter a valid wave number between 1 and 100000.", id))
 		return nil
 	}
 
