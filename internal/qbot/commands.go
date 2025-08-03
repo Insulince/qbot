@@ -54,7 +54,7 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 			return nil
 		}
 
-		if strings.ToUpper(cmd.Message.Content) == cmd.Message.Content {
+		if messageIsShouting(cmd.Message.Content) {
 			q.mustPost(cmd.Message.ChannelID, "I heard you, no need to shout!")
 		}
 
@@ -114,6 +114,20 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 		q.mustPost(m.ChannelID, "Could not process command, an error occurred and has been logged, contact a Q-Dev for assistance.")
 		q.reportError(err)
 	}
+}
+
+// A shouted message is one which both contains at least 1 letter and for each letter contained each one is uppercase.
+func messageIsShouting(s string) bool {
+	hasLetter := false
+	for _, r := range s {
+		if unicode.IsLetter(r) {
+			hasLetter = true
+			if unicode.IsLower(r) {
+				return false
+			}
+		}
+	}
+	return hasLetter
 }
 
 // If the string is "!" followed by a string that represents an integer, then return true, else return false.
