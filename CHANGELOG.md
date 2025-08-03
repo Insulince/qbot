@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v1.1.4 - 2 August 2025
+- You can now submit waves by directly submitting a number as your command, like `!1392` is equivalent to `!submitwave 1392`.
+
 ### v1.1.3 - 23 July 2025
 - Kara had to go and push tourney beyond 10k waves, so here I go upping the limit
 

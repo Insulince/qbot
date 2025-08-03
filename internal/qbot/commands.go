@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -98,6 +99,12 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 		case `!dev`:
 			return q.handleDev(cmd)
 		default:
+			if isNumber(cmd.Command) {
+				cmd.Command = cmd.Command[1:]                         // Remove the "!" from the number represented in the command.
+				cmd.Args = append([]string{cmd.Command}, cmd.Args...) // Move the number into the args, preserving any other provided args after.
+				cmd.Command = "submitwave"                            // Re-set the actual command to be "submitwave".
+				return q.handleSubmitWave(cmd)
+			}
 			q.mustPost(m.ChannelID, fmt.Sprintf("unknown command (use `!help` for available commands): `%s`", cmd.Command))
 			return nil
 		}
@@ -107,6 +114,16 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 		q.mustPost(m.ChannelID, "Could not process command, an error occurred and has been logged, contact a Q-Dev for assistance.")
 		q.reportError(err)
 	}
+}
+
+// If the string is "!" followed by a string that represents an integer, then return true, else return false.
+func isNumber(s string) bool {
+	s = s[1:]                 // Ignore the prefixed "!"
+	_, err := strconv.Atoi(s) // Check if the rest is an integer.
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func (q *QBot) interpretMessage(m *discordgo.MessageCreate) (Cmd, error) {
