@@ -17,14 +17,14 @@ var schedule = map[string]string{
 	// Saturday tourney
 	"Saturday 00:00": "Tournament signups are now open! Use `!queue` to join",
 	"Saturday 23:00": "1-hour warning! Tournament runs close soon",
-	"Sunday 00:00":   "Tournament runs are now closed",
-	"Sunday 04:00":   "Tournament has ended, rewards are being distributed",
+	// "Sunday 00:00":   "Tournament runs are now closed",
+	// "Sunday 04:00":   "Tournament has ended, rewards are being distributed",
 
 	// Wednesday tourney
 	"Wednesday 00:00": "Tournament signups are now open! Use `!queue` to join",
 	"Wednesday 23:00": "1-hour warning! Tournament runs close soon",
-	"Thursday 00:00":  "Tournament runs are now closed",
-	"Thursday 04:00":  "Tournament has ended, rewards are being distributed",
+	// "Thursday 00:00":  "Tournament runs are now closed",
+	// "Thursday 04:00":  "Tournament has ended, rewards are being distributed",
 }
 
 // Function to check the time and send messages

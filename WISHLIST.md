@@ -30,3 +30,6 @@
 - 
 - !q outside of tourney times should meme the dude tryna use it
 - levenshtein distance
+- `!predict`, to submit a wave count for the upcoming tourney or something. have it react to how right or wrong you we
+  - could even have some sort of wager, but like fake money, still that gets a bit complicated
+- Q sends DMs to people who haven't yet done a run but normall do, or something like that
