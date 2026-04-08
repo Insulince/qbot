@@ -151,6 +151,21 @@ func (q *QBot) GetDisplayName(msg *discordgo.MessageCreate) (string, error) {
 	return member.User.Username, nil
 }
 
+// parseMention extracts a Discord user ID from a mention string like <@123456> or <@!123456>.
+func parseMention(s string) (string, bool) {
+	if len(s) < 4 || s[0] != '<' || s[1] != '@' || s[len(s)-1] != '>' {
+		return "", false
+	}
+	inner := s[2 : len(s)-1]
+	if len(inner) > 0 && inner[0] == '!' {
+		inner = inner[1:]
+	}
+	if len(inner) == 0 {
+		return "", false
+	}
+	return inner, true
+}
+
 func (q *QBot) mustAnnounceStart() {
 	q.mustPost(q.errorChannelId, fmt.Sprintf("Q %s started at %v!", version.MustGet(), time.Now().UTC()))
 }

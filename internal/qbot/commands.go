@@ -96,6 +96,8 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 			return q.handleOwned(cmd)
 		case `!history`:
 			return q.handleHistory(cmd)
+		case `!progress`:
+			return q.handleProgress(cmd)
 		case `!dev`:
 			return q.handleDev(cmd)
 		default:

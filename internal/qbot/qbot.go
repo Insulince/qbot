@@ -48,6 +48,10 @@ type Store interface {
 	GetTournamentWinner(tournamentId int64, maxWaves int64) (*models.TournamentEntry, error)
 	GetTournamentStats(tournamentId int64) (entrants int, maxWaves *int64, averageWaves *float64, _ error)
 
+	GetUserTournamentEntries(userId string, limit, offset int) ([]*models.PlayerTournamentResult, error)
+	CountUserTournamentEntries(userId string) (int, error)
+	GetUserTournamentEntriesInDateRange(userId, startShortName, endShortName string) ([]*models.PlayerTournamentResult, error)
+
 	io.Closer
 }
 

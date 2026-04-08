@@ -22,18 +22,8 @@ func (q *QBot) handleForceWave(cmd Cmd) error {
 	}
 
 	// Parse the user mention
-	mention := cmd.Args[0]
-	targetUserId := ""
-	if len(mention) >= 3 && mention[0] == '<' && mention[1] == '@' {
-		mention = mention[2:]
-		if mention[0] == '!' {
-			mention = mention[1:]
-		}
-		if mention[len(mention)-1] == '>' {
-			targetUserId = mention[:len(mention)-1]
-		}
-	}
-	if targetUserId == "" {
+	targetUserId, ok := parseMention(cmd.Args[0])
+	if !ok {
 		q.mustPost(cmd.Message.ChannelID, "Could not parse user mention. Please use the format: `!forcewave <@user> <wave>`")
 		return nil
 	}

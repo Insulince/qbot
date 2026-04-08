@@ -10,9 +10,8 @@
 - need to ensure that when an error occurs, the bot doesnt just stay silent, but tells the user something went wrong
 - announcement system? announce when timed things reset? daily missions are released, crates reset, event starts, etc.?
 - !roast
-- command to extract a players progress out of past tournament results. Something like !progress <username>, and it would scan over all tournament entries for that player and output them, maybe with a delta or something
 - Add specific `help` sub commands to each command
-- User specific history + graphing?
+- User specific history graphing? (player progress across tourneys via `!progress` is implemented, but visual graphing is not)
 - different tiers in tourney tracking
 - !walkie
 - !shame - shame someone who either forgets their turn in the queue, or someone who skips the queue entirely

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### v1.2.0 - 8 April 2026
+- Add `!progress <@user> [args]` command to view a player's results across tournaments. Supports latest N results, limit/offset pagination, since-date, and date range modes.
+- Bump Go version to 1.26.1.
+
 ### v1.1.4 - 2 August 2025
 - You can now submit waves by directly submitting a number as your command, like `!1392` is equivalent to `!submitwave 1392`.
 

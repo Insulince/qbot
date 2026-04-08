@@ -270,6 +270,82 @@ LIMIT 1
 	return tournamentEntry, nil
 }
 
+func (s Store) GetUserTournamentEntries(userId string, limit, offset int) ([]*models.PlayerTournamentResult, error) {
+	const sql = `
+SELECT
+    t.name,
+    t.short_name,
+    te.waves,
+    (SELECT COUNT(*) FROM tournament_entries te2 WHERE te2.tournament_id = te.tournament_id AND te2.waves > te.waves) + 1 AS rank,
+    (SELECT COUNT(*) FROM tournament_entries te2 WHERE te2.tournament_id = te.tournament_id) AS total_entrants
+FROM tournament_entries te
+JOIN tournaments t ON t.id = te.tournament_id
+WHERE te.user_id = ?
+ORDER BY t.id DESC
+LIMIT ? OFFSET ?
+;`
+
+	rows, err := s.db.Query(sql, userId, limit, offset)
+	if err != nil {
+		return nil, errors.Wrap(err, "query user tournament entries")
+	}
+	defer jmust.MustClose(rows)
+
+	return scanPlayerTournamentResults(rows)
+}
+
+func (s Store) CountUserTournamentEntries(userId string) (int, error) {
+	const sql = `
+SELECT COUNT(*)
+FROM tournament_entries
+WHERE user_id = ?
+;`
+
+	var count int
+	if err := s.db.QueryRow(sql, userId).Scan(&count); err != nil {
+		return 0, errors.Wrap(err, "count user tournament entries")
+	}
+	return count, nil
+}
+
+func (s Store) GetUserTournamentEntriesInDateRange(userId, startShortName, endShortName string) ([]*models.PlayerTournamentResult, error) {
+	const sql = `
+SELECT
+    t.name,
+    t.short_name,
+    te.waves,
+    (SELECT COUNT(*) FROM tournament_entries te2 WHERE te2.tournament_id = te.tournament_id AND te2.waves > te.waves) + 1 AS rank,
+    (SELECT COUNT(*) FROM tournament_entries te2 WHERE te2.tournament_id = te.tournament_id) AS total_entrants
+FROM tournament_entries te
+JOIN tournaments t ON t.id = te.tournament_id
+WHERE te.user_id = ?
+    AND t.short_name >= ?
+    AND t.short_name <= ?
+ORDER BY t.id DESC
+LIMIT 30
+;`
+
+	rows, err := s.db.Query(sql, userId, startShortName, endShortName)
+	if err != nil {
+		return nil, errors.Wrap(err, "query user tournament entries in date range")
+	}
+	defer jmust.MustClose(rows)
+
+	return scanPlayerTournamentResults(rows)
+}
+
+func scanPlayerTournamentResults(rows *sql.Rows) ([]*models.PlayerTournamentResult, error) {
+	var results []*models.PlayerTournamentResult
+	for rows.Next() {
+		r := new(models.PlayerTournamentResult)
+		if err := rows.Scan(&r.TournamentName, &r.TournamentShortName, &r.Waves, &r.Rank, &r.TotalEntrants); err != nil {
+			return nil, errors.Wrap(err, "scanning player tournament result")
+		}
+		results = append(results, r)
+	}
+	return results, nil
+}
+
 func (s Store) GetTournamentStats(tournamentId int64) (entrants int, maxWaves *int64, averageWaves *float64, _ error) {
 	const tournamentStatsSql = `
 SELECT

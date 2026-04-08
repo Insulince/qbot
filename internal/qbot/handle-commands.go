@@ -19,6 +19,12 @@ func (q *QBot) handleCommands(cmd Cmd) error {
 		"• `!history [YYYY-MM-DD]` - View tournament history\n" +
 		"  └ Usage: `!history` (recent tournaments)\n" +
 		"  └ Usage: `!history 2024-03-15` (specific tournament)\n" +
+		"• `!progress <@user> [args]` - View a player's results across tournaments\n" +
+		"  └ Usage: `!progress <@user>` (latest 10)\n" +
+		"  └ Usage: `!progress <@user> 5` (latest 5)\n" +
+		"  └ Usage: `!progress <@user> 10 5` (limit/offset)\n" +
+		"  └ Usage: `!progress <@user> 2024-01-01` (since date)\n" +
+		"  └ Usage: `!progress <@user> 2024-01-01 2024-06-01` (date range)\n" +
 		"\n" +
 		"🛡️ **Moderator Commands**\n" +
 		"• `!forcewave <@user> <number>` - Force-overwrite a player's wave count for the current tournament\n" +

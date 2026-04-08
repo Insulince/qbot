@@ -1,6 +1,6 @@
 module github.com/Insulince/qbot
 
-go 1.24
+go 1.26.1
 
 require (
 	github.com/Insulince/jlib v0.0.0-20240925201944-1835938c7a4b
