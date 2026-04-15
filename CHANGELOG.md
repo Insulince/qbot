@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v1.2.1 - 10 April 2026
+- Fix bug where a crash at just the right moment (when tourney starts) would cause an error as it tries to create a duplicate entry.
+
 ### v1.2.0 - 8 April 2026
 - Add `!progress <@user> [args]` command to view a player's results across tournaments. Supports latest N results, limit/offset pagination, since-date, and date range modes.
 - Bump Go version to 1.26.1.

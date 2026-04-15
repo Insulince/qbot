@@ -45,7 +45,7 @@ func (s Store) MustClose() {
 
 func (s Store) InsertTournament(name, shortName string) error {
 	const newTournamentSql = `
-INSERT INTO tournaments
+INSERT OR IGNORE INTO tournaments
     (name, short_name)
 VALUES
     (?, ?)
