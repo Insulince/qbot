@@ -61,17 +61,22 @@ VALUES
 func (s Store) GetLatestTournament() (*models.Tournament, error) {
 	const getLatestTournamentSql = `
 SELECT
-    MAX(id)
+    id,
+    name,
+    short_name
 FROM tournaments
+ORDER BY id DESC
+LIMIT 1
 ;`
 
-	var tournamentId int
-	if err := s.db.QueryRow(getLatestTournamentSql).Scan(&tournamentId); err != nil {
+	tournament := new(models.Tournament)
+	err := s.db.QueryRow(getLatestTournamentSql).Scan(&tournament.Id, &tournament.Name, &tournament.ShortName)
+	if err == sql.ErrNoRows {
+		return nil, errors.New("no tournament found")
+	}
+	if err != nil {
 		return nil, errors.Wrap(err, "get latest tournament")
 	}
-
-	tournament := new(models.Tournament)
-	tournament.Id = int64(tournamentId)
 
 	return tournament, nil
 }
@@ -166,6 +171,26 @@ ON CONFLICT (tournament_id, user_id) DO UPDATE SET
 	}
 
 	return nil
+}
+
+func (s Store) DeleteTournamentEntry(tournamentId int64, userId string) (bool, error) {
+	const deleteSql = `
+DELETE FROM tournament_entries
+WHERE tournament_id = ?
+  AND user_id = ?
+;`
+
+	result, err := s.db.Exec(deleteSql, tournamentId, userId)
+	if err != nil {
+		return false, errors.Wrap(err, "exec delete")
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return false, errors.Wrap(err, "rows affected")
+	}
+
+	return rows > 0, nil
 }
 
 func (s Store) GetTournamentEntries(tournamentId int64) ([]*models.TournamentEntry, error) {

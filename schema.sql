@@ -21,3 +21,6 @@ CREATE TABLE IF NOT EXISTS tournament_entries (
 
 -- Migrated tournament_entries to support guild_id field.
 -- ALTER TABLE tournament_entries ADD COLUMN guild_id TEXT NOT NULL DEFAULT 'MISSING';
+
+CREATE INDEX IF NOT EXISTS idx_tournament_entries_tournament_id ON tournament_entries(tournament_id);
+CREATE INDEX IF NOT EXISTS idx_tournament_entries_user_id ON tournament_entries(user_id);

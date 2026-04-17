@@ -1,5 +1,19 @@
 # CHANGELOG
 
+### v1.3.0 - 17 April 2026
+- Add `!clearwave` command — remove your own wave entry from the current tournament leaderboard.
+- Add `!shame` command — posts the shame GIF, optionally tagging a specific user.
+- Add `!help <command>` — detailed per-command help instead of one big wall of text.
+- Typo suggestions — mistyped commands now get a "did you mean?" hint instead of silence.
+- Queue now notes when there is no active tournament so you know what you're getting into.
+- Long-running background goroutines (timeout checker, scheduler) now restart automatically on failure instead of silently dying.
+- Fix scheduler using `time.Sleep` which drifted over time — now uses a ticker for accurate minute-boundary firing.
+- Fix `!leaderboard` (and anything using the latest tournament) returning empty name and short name fields.
+- Add config validation at startup — misconfigured bots now fail fast with a clear error instead of misbehaving at runtime.
+- Add per-guild `moderatorRoleName` config field — no longer hardcoded to `"Moderator"`.
+- Add DB indexes on `tournament_entries(tournament_id)` and `tournament_entries(user_id)`.
+- Migrate logging to `log/slog` for structured output.
+
 ### v1.2.2 - 16 April 2026
 - Fix goroutine panics not being reported to Discord before crashing — panics in `Go()`-spawned goroutines now post to the error channel and re-panic.
 - Add `!dev panic` command to intentionally trigger a panic for testing.

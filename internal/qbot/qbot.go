@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -33,6 +34,9 @@ type QBot struct {
 
 	queue      []QueueItem
 	queueMutex sync.Mutex
+
+	guildRolesCache map[string]cachedGuildRoles
+	guildRolesMu    sync.RWMutex
 }
 
 type Store interface {
@@ -43,6 +47,7 @@ type Store interface {
 	CountTournaments() (int, error)
 
 	InsertTournamentEntry(guildId string, tournamentId int64, userId, username, displayName string, waves int) error
+	DeleteTournamentEntry(tournamentId int64, userId string) (bool, error)
 	GetTournamentEntries(tournamentId int64) ([]*models.TournamentEntry, error)
 	GetLatestTournamentEntries() ([]*models.TournamentEntry, error)
 	GetTournamentWinner(tournamentId int64, maxWaves int64) (*models.TournamentEntry, error)
@@ -72,10 +77,12 @@ func New(cfg config.Config, s Store) (*QBot, error) {
 		g.Name = cg.Name
 		g.AnnouncementChannelId = cg.AnnouncementChannelId
 		g.AudienceIdentifier = cg.AudienceIdentifier
+		g.ModeratorRoleName = cg.ModeratorRoleName
 		q.guilds[id] = g
 	}
 
 	q.store = s
+	q.guildRolesCache = make(map[string]cachedGuildRoles)
 
 	session, err := q.newSession()
 	if err != nil {
@@ -116,10 +123,10 @@ func (q *QBot) run(ctx context.Context) error {
 		}
 	}()
 
-	q.Go(q.timeoutChecker)
-	q.Go(q.startScheduler)
+	q.GoWithRestart(ctx, "timeoutChecker", func() error { return q.timeoutChecker(ctx) })
+	q.GoWithRestart(ctx, "startScheduler", func() error { return q.startScheduler(ctx) })
 
-	fmt.Println("Q is running")
+	slog.Info("Q is running")
 	q.started = time.Now()
 	q.mustAnnounceStart()
 

@@ -10,12 +10,10 @@ import (
 
 // Handle !owned
 func (q *QBot) handleOwned(cmd Cmd) error {
-	const ownedPath = "/app/assets/owned.png"
-
-	file, err := os.Open(ownedPath)
+	file, err := os.Open(assetOwned)
 	if err != nil {
 		q.mustPost(cmd.Message.ChannelID, "❌ Error: Could not open owned image.")
-		return errors.Wrapf(err, "open owned image %q", ownedPath)
+		return errors.Wrapf(err, "open owned image %q", assetOwned)
 	}
 	defer jmust.MustClose(file)
 

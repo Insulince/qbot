@@ -19,6 +19,10 @@ func main() {
 func Main(ctx context.Context) error {
 	cfg := config.MustGetConfig()
 
+	if err := cfg.Validate(); err != nil {
+		return errors.Wrap(err, "invalid config")
+	}
+
 	deps := config.MustBuildDependencies(cfg)
 	defer deps.MustClose()
 

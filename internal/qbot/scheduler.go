@@ -2,8 +2,9 @@ package qbot
 
 import (
 	"bytes"
+	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -12,58 +13,90 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Schedule of announcements (UTC time)
-var schedule = map[string]string{
-	// Saturday tourney
-	"Saturday 00:00": "Tournament signups are now open! Use `!queue` to join",
-	"Saturday 23:00": "1-hour warning! Tournament runs close soon",
-	// "Sunday 00:00":   "Tournament runs are now closed",
-	// "Sunday 04:00":   "Tournament has ended, rewards are being distributed",
-
-	// Wednesday tourney
-	"Wednesday 00:00": "Tournament signups are now open! Use `!queue` to join",
-	"Wednesday 23:00": "1-hour warning! Tournament runs close soon",
-	// "Thursday 00:00":  "Tournament runs are now closed",
-	// "Thursday 04:00":  "Tournament has ended, rewards are being distributed",
+// scheduledEvent describes a single scheduled occurrence.
+type scheduledEvent struct {
+	message string       // announcement message to broadcast (empty if no announcement)
+	action  func() error // optional action to run before the announcement (nil if none)
+	enabled bool         // set to false to skip without removing the entry
 }
 
-// Function to check the time and send messages
-func (q *QBot) startScheduler() error {
-	for {
-		now := time.Now().UTC()
-		key := fmt.Sprintf("%s %02d:%02d", now.Weekday(), now.Hour(), now.Minute())
+func (q *QBot) startScheduler(ctx context.Context) error {
+	// schedule is built inside startScheduler so action fields can reference q methods.
+	schedule := map[string]scheduledEvent{
+		// Saturday tourney
+		"Saturday 00:00": {
+			message: "Tournament signups are now open! Use `!queue` to join",
+			action:  q.createNewTournament,
+			enabled: true,
+		},
+		"Saturday 23:00": {
+			message: "1-hour warning! Tournament runs close soon",
+			enabled: true,
+		},
+		"Sunday 04:00": {
+			action:  q.announceLeaderboard,
+			enabled: false,
+		},
 
-		if msg, exists := schedule[key]; exists {
-			if (now.Weekday() == time.Saturday || now.Weekday() == time.Wednesday) && now.Hour() == 0 && now.Minute() == 0 {
-				if err := q.createNewTournament(); err != nil {
-					return errors.Wrap(err, "creating new tournament")
+		// Wednesday tourney
+		"Wednesday 00:00": {
+			message: "Tournament signups are now open! Use `!queue` to join",
+			action:  q.createNewTournament,
+			enabled: true,
+		},
+		"Wednesday 23:00": {
+			message: "1-hour warning! Tournament runs close soon",
+			enabled: true,
+		},
+		"Thursday 04:00": {
+			action:  q.announceLeaderboard,
+			enabled: false,
+		},
+	}
+
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			now := time.Now().UTC()
+			key := fmt.Sprintf("%s %02d:%02d", now.Weekday(), now.Hour(), now.Minute())
+
+			event, exists := schedule[key]
+			if !exists || !event.enabled {
+				continue
+			}
+
+			if event.action != nil {
+				if err := event.action(); err != nil {
+					return errors.Wrap(err, "scheduled action")
 				}
 			}
 
-			err := q.announceMessage(key, msg)
-			if err != nil {
-				return errors.Wrap(err, "announce message")
-			}
-
-			if (now.Weekday() == time.Sunday || now.Weekday() == time.Thursday) && now.Hour() == 4 && now.Minute() == 0 {
-				for guildId := range q.guilds {
-					if err := q.handleLeaderboard(Cmd{GuildId: guildId}, true); err != nil {
-						return errors.Wrap(err, "handling leaderboard")
-					}
+			if event.message != "" {
+				if err := q.announceMessage(key, event.message); err != nil {
+					return errors.Wrap(err, "announce message")
 				}
 			}
 		}
-
-		time.Sleep(60 * time.Second) // Check every minute
 	}
 }
 
-func (q *QBot) announceMessage(key, msg string) error {
-	const everyonePath = "/app/assets/everyone.png"
+func (q *QBot) announceLeaderboard() error {
+	for guildId := range q.guilds {
+		if err := q.handleLeaderboard(Cmd{GuildId: guildId}, true); err != nil {
+			return errors.Wrapf(err, "handling leaderboard for guild %s", guildId)
+		}
+	}
+	return nil
+}
 
-	data, err := os.ReadFile(everyonePath)
+func (q *QBot) announceMessage(key, msg string) error {
+	data, err := os.ReadFile(assetEveryone)
 	if err != nil {
-		return errors.Wrapf(err, "read everyone image %q", everyonePath)
+		return errors.Wrapf(err, "read everyone image %q", assetEveryone)
 	}
 
 	for _, g := range q.guilds {
@@ -91,25 +124,21 @@ func (q *QBot) announceMessage(key, msg string) error {
 			return errors.Wrapf(err, "send announcement message and image")
 		}
 
-		log.Printf("[%s] Scheduled message sent to guild %q: %q\n", key, g.Name, mentionMsg)
+		slog.Info("scheduled message sent", "event", key, "guild", g.Name, "message", mentionMsg)
 	}
 
 	return nil
 }
 
-// Function to create a new tournament
 func (q *QBot) createNewTournament() error {
-	// Generate short_name in yyyy-mm-dd format
 	now := time.Now().UTC()
 	shortName := fmt.Sprintf("%04d-%02d-%02d", now.Year(), now.Month(), now.Day())
-
-	// Generate the full tournament name
 	fullName := fmt.Sprintf("%d %s %d", now.Day(), strings.ToUpper(now.Month().String()), now.Year())
 
 	if err := q.store.InsertTournament(fullName, shortName); err != nil {
 		return errors.Wrap(err, "inserting new tournament")
 	}
 
-	log.Println("✅ New tournament created:", fullName)
+	slog.Info("new tournament created", "name", fullName)
 	return nil
 }

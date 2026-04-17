@@ -10,6 +10,18 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// isWithinTournamentWindow returns true on the days when a tournament is active or
+// about to start. Saturday and Sunday cover the weekly Saturday tourney;
+// Wednesday and Thursday cover the midweek tourney.
+func isWithinTournamentWindow() bool {
+	switch time.Now().UTC().Weekday() {
+	case time.Saturday, time.Sunday, time.Wednesday, time.Thursday:
+		return true
+	default:
+		return false
+	}
+}
+
 // QueueItem represents an entry in the queue.
 type QueueItem struct {
 	UserID    string
@@ -21,9 +33,6 @@ type QueueItem struct {
 
 // handleQueue adds a user to the queue.
 func (q *QBot) handleQueue(cmd Cmd) error {
-	const passPath = "/app/assets/pass-smaller.png"
-	const blockPath = "/app/assets/block-smaller.png"
-
 	q.queueMutex.Lock()
 	defer q.queueMutex.Unlock()
 
@@ -50,10 +59,15 @@ func (q *QBot) handleQueue(cmd Cmd) error {
 
 	q.queue = append(q.queue, newItem)
 
+	offTourneyNote := ""
+	if !isWithinTournamentWindow() {
+		offTourneyNote = "\n⚠️ _Heads up: there's no active tournament right now, but who am I to stop you from your precious queue?_"
+	}
+
 	if len(q.queue) == 1 {
-		q.sendPass(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s>, you've been added to the queue and you're first so **it is now your turn**! Type `!enter` once you join your bracket.", cmd.Message.Author.ID))
+		q.sendPass(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s>, you've been added to the queue and you're first so **it is now your turn**! Type `!enter` once you join your bracket.%s", cmd.Message.Author.ID, offTourneyNote))
 	} else {
-		q.sendBlock(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s> 🚨 **DO NOT JOIN YET!** 🚨 You've been added to the queue in position %d.\nPlease wait for your turn, you will be pinged here when the time comes.\n_Players ahead of you:_ %s", cmd.Message.Author.ID, len(q.queue), q.formatPlayersAhead(len(q.queue)-1)))
+		q.sendBlock(cmd.Message.ChannelID, cmd.Message.Author.ID, fmt.Sprintf("<@%s> 🚨 **DO NOT JOIN YET!** 🚨 You've been added to the queue in position %d.\nPlease wait for your turn, you will be pinged here when the time comes.\n_Players ahead of you:_ %s%s", cmd.Message.Author.ID, len(q.queue), q.formatPlayersAhead(len(q.queue)-1), offTourneyNote))
 	}
 
 	return nil
@@ -105,13 +119,9 @@ func (q *QBot) sendImageMessage(channelID, userId, content, imagePath, imageName
 }
 
 func (q *QBot) sendPass(channelId, userId, msg string) {
-	const passPath = "/app/assets/pass-smaller.png"
-
-	q.sendImageMessage(channelId, userId, msg, passPath, "pass.png")
+	q.sendImageMessage(channelId, userId, msg, assetPass, "pass.png")
 }
 
 func (q *QBot) sendBlock(channelId, userId, msg string) {
-	const blockPath = "/app/assets/block-smaller.png"
-
-	q.sendImageMessage(channelId, userId, msg, blockPath, "block.png")
+	q.sendImageMessage(channelId, userId, msg, assetBlock, "block.png")
 }

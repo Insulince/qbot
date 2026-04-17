@@ -33,8 +33,55 @@ type (
 		Name                  string `json:"name"`
 		AnnouncementChannelId string `json:"announcementChannelId"`
 		AudienceIdentifier    string `json:"audienceIdentifier"`
+		ModeratorRoleName     string `json:"moderatorRoleName"` // defaults to "Moderator" if empty
 	}
 )
+
+// Validate returns an error if any required config field is missing or logically invalid.
+func (c Config) Validate() error {
+	if c.DiscordBotToken == "" {
+		return errors.New("discordBotToken is required")
+	}
+	if c.EnterTimeoutMinutes <= 0 {
+		return errors.Errorf("enterTimeoutMinutes must be positive, got %d", c.EnterTimeoutMinutes)
+	}
+	if c.FullTimeoutMinutes <= 0 {
+		return errors.Errorf("fullTimeoutMinutes must be positive, got %d", c.FullTimeoutMinutes)
+	}
+	if c.WarnThresholdMinutes <= 0 {
+		return errors.Errorf("warnThresholdMinutes must be positive, got %d", c.WarnThresholdMinutes)
+	}
+	if c.WarnThresholdMinutes >= c.EnterTimeoutMinutes {
+		return errors.Errorf("warnThresholdMinutes (%d) must be less than enterTimeoutMinutes (%d)", c.WarnThresholdMinutes, c.EnterTimeoutMinutes)
+	}
+	if c.ErrorChannelId == "" {
+		return errors.New("errorChannelId is required")
+	}
+	if c.NotificationRoleId == "" {
+		return errors.New("notificationRoleId is required")
+	}
+	if c.DbDriver == "" {
+		return errors.New("dbDriver is required")
+	}
+	if c.DbFile == "" {
+		return errors.New("dbFile is required")
+	}
+	if len(c.Guilds) == 0 {
+		return errors.New("at least one guild must be configured")
+	}
+	for id, g := range c.Guilds {
+		if g.Name == "" {
+			return errors.Errorf("guild %q: name is required", id)
+		}
+		if g.AnnouncementChannelId == "" {
+			return errors.Errorf("guild %q: announcementChannelId is required", id)
+		}
+		if g.AudienceIdentifier == "" {
+			return errors.Errorf("guild %q: audienceIdentifier is required", id)
+		}
+	}
+	return nil
+}
 
 func GetConfig() (Config, error) {
 	path, found := os.LookupEnv(EnvVarConfigFilePath)

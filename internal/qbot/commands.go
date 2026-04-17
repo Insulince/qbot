@@ -2,10 +2,11 @@ package qbot
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/bwmarrin/discordgo"
@@ -26,9 +27,23 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 	// reason that we cannot make this function return an error and have to do this silly anonymous function stuff
 	// in the following code.
 
+	// discordgo does not recover panics in event handlers, so we must catch them here.
+	// We log to Discord and stdout, then re-panic to crash the bot (triggering a restart).
+	defer func() {
+		if v := recover(); v != nil {
+			msg := fmt.Sprintf("🚨 **Panic in Q** 🚨\n<@&%s>: panic in message handler: %v", q.notificationRoleId, v)
+			slog.Error("panic in message handler", "panic", v)
+			if err := q.post(q.errorChannelId, msg); err != nil {
+				slog.Error("failed to report panic to Discord", "err", err)
+			}
+			time.Sleep(2 * time.Second) // allow Discord to receive the message before crashing
+			panic(v)
+		}
+	}()
+
 	err := func() error {
 		// Log every message for debugging.
-		log.Printf("[%s] %s: %s\n", m.ChannelID, m.Author.Username, m.Content)
+		slog.Info("message received", "channel", m.ChannelID, "user", m.Author.Username, "content", m.Content)
 
 		// Ignore messages from the bot itself.
 		if m.Author.ID == q.session.State.User.ID {
@@ -98,6 +113,10 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 			return q.handleHistory(cmd)
 		case `!progress`:
 			return q.handleProgress(cmd)
+		case `!clearwave`:
+			return q.handleClearWave(cmd)
+		case `!shame`:
+			return q.handleShame(cmd)
 		case `!dev`:
 			return q.handleDev(cmd)
 		default:
@@ -107,7 +126,11 @@ func (q *QBot) messageHandler(_ *discordgo.Session, m *discordgo.MessageCreate) 
 				cmd.Command = "submitwave"                            // Re-set the actual command to be "submitwave".
 				return q.handleSubmitWave(cmd)
 			}
-			q.mustPost(m.ChannelID, fmt.Sprintf("unknown command (use `!help` for available commands): `%s`", cmd.Command))
+			if suggestion := suggestCommand(cmd.Command); suggestion != "" {
+				q.mustPost(m.ChannelID, fmt.Sprintf("Unknown command `%s` — did you mean `%s`? (use `!help` for all commands)", cmd.Command, suggestion))
+			} else {
+				q.mustPost(m.ChannelID, fmt.Sprintf("Unknown command `%s` — use `!help` for available commands.", cmd.Command))
+			}
 			return nil
 		}
 	}()

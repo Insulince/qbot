@@ -58,11 +58,10 @@ func (q *QBot) handleLeaderboard(cmd Cmd, final bool) error {
 
 // Send a local image file with the username added directly to the image
 func (q *QBot) congratulateLoser(channelID, lastPlaceDisplayName string) {
-	const templatePath = "/app/assets/celebrate.png"
 	const outputPath = "/tmp/last_place_meme.png"
 
 	// Open the template image
-	templateFile, err := os.Open(templatePath)
+	templateFile, err := os.Open(assetCelebrate)
 	if err != nil {
 		q.mustPost(channelID, "❌ Error: Could not load template image.")
 		return
@@ -82,7 +81,7 @@ func (q *QBot) congratulateLoser(channelID, lastPlaceDisplayName string) {
 	draw.Draw(rgba, bounds, img, bounds.Min, draw.Src)
 
 	// Load font
-	fontBytes, err := os.ReadFile("/app/assets/impact.ttf")
+	fontBytes, err := os.ReadFile(assetImpactTTF)
 	if err != nil {
 		// Fallback to system font if custom font not available
 		fontBytes, err = os.ReadFile("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")

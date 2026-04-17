@@ -98,6 +98,84 @@ func TestStore_GetLatestTournament(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, third.Id, tournament.Id)
 	})
+
+	t.Run("returns populated name and short_name fields", func(t *testing.T) {
+		s := newTestStore(t)
+		require.NoError(t, s.InsertTournament("Sunday Weekly", "2026-04-06"))
+
+		tournament, err := s.GetLatestTournament()
+		require.NoError(t, err)
+		require.Equal(t, "Sunday Weekly", tournament.Name)
+		require.Equal(t, "2026-04-06", tournament.ShortName)
+	})
+
+	t.Run("returns error when no tournaments exist", func(t *testing.T) {
+		s := newTestStore(t)
+		_, err := s.GetLatestTournament()
+		require.Error(t, err)
+	})
+}
+
+func TestStore_DeleteTournamentEntry(t *testing.T) {
+	setup := func(t *testing.T) (*store.Store, int64) {
+		t.Helper()
+		s := newTestStore(t)
+		require.NoError(t, s.InsertTournament("Sunday Weekly", "2026-04-06"))
+		tournament, err := s.GetTournamentByShortName("2026-04-06")
+		require.NoError(t, err)
+		require.NoError(t, s.InsertTournamentEntry("g", tournament.Id, "user1", "u1", "Alice", 1500))
+		return s, tournament.Id
+	}
+
+	t.Run("deletes an existing entry and returns true", func(t *testing.T) {
+		s, tournamentId := setup(t)
+		deleted, err := s.DeleteTournamentEntry(tournamentId, "user1")
+		require.NoError(t, err)
+		require.True(t, deleted)
+
+		entries, err := s.GetTournamentEntries(tournamentId)
+		require.NoError(t, err)
+		require.Empty(t, entries)
+	})
+
+	t.Run("returns false when entry does not exist", func(t *testing.T) {
+		s, tournamentId := setup(t)
+		deleted, err := s.DeleteTournamentEntry(tournamentId, "nonexistent")
+		require.NoError(t, err)
+		require.False(t, deleted)
+	})
+
+	t.Run("returns false when deleting an already-deleted entry", func(t *testing.T) {
+		s, tournamentId := setup(t)
+		_, err := s.DeleteTournamentEntry(tournamentId, "user1")
+		require.NoError(t, err)
+
+		deleted, err := s.DeleteTournamentEntry(tournamentId, "user1")
+		require.NoError(t, err)
+		require.False(t, deleted)
+	})
+
+	t.Run("only deletes entry for the specified tournament", func(t *testing.T) {
+		s := newTestStore(t)
+		require.NoError(t, s.InsertTournament("First", "2026-01-01"))
+		first, err := s.GetTournamentByShortName("2026-01-01")
+		require.NoError(t, err)
+		require.NoError(t, s.InsertTournamentEntry("g", first.Id, "user1", "u1", "Alice", 1000))
+
+		require.NoError(t, s.InsertTournament("Second", "2026-01-08"))
+		second, err := s.GetTournamentByShortName("2026-01-08")
+		require.NoError(t, err)
+		require.NoError(t, s.InsertTournamentEntry("g", second.Id, "user1", "u1", "Alice", 1500))
+
+		deleted, err := s.DeleteTournamentEntry(first.Id, "user1")
+		require.NoError(t, err)
+		require.True(t, deleted)
+
+		// Entry in second tournament must be untouched
+		entries, err := s.GetTournamentEntries(second.Id)
+		require.NoError(t, err)
+		require.Len(t, entries, 1)
+	})
 }
 
 func TestStore_ListTournaments(t *testing.T) {

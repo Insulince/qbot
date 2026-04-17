@@ -11,6 +11,7 @@ type Guild struct {
 	Name                  string
 	AnnouncementChannelId string
 	AudienceIdentifier    string
+	ModeratorRoleName     string
 }
 
 func (gs Guilds) Get(guildId string) (Guild, error) {
