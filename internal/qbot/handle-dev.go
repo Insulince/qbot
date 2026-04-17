@@ -27,6 +27,8 @@ func (q *QBot) handleDev(cmd Cmd) error {
 	switch cmd.Command {
 	case `err`, `error`:
 		return q.handleDevError(cmd)
+	case `panic`:
+		return q.handleDevPanic(cmd)
 	case `displayname`:
 		return q.handleDevDisplayName(cmd)
 	case `parsetourneyname`:
@@ -44,6 +46,11 @@ func (q *QBot) handleDevError(cmd Cmd) error {
 	err := errors.Errorf("intentional dev error triggered with payload %q", msg)
 
 	return err
+}
+
+func (q *QBot) handleDevPanic(cmd Cmd) error {
+	msg := strings.Join(cmd.Args, " ")
+	panic(fmt.Sprintf("intentional dev panic triggered with payload %q", msg))
 }
 
 func (q *QBot) handleDevDisplayName(cmd Cmd) error {

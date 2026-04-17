@@ -30,6 +30,12 @@ func (q *QBot) reportError(err error) {
 
 func (q *QBot) Go(fn func() error) {
 	go func() {
+		defer func() {
+			if v := recover(); v != nil {
+				_ = q.post(q.errorChannelId, fmt.Sprintf("🚨 **Panic in Q** 🚨\n<@&%s>: panic: %v", q.notificationRoleId, v))
+				panic(v)
+			}
+		}()
 		if err := fn(); err != nil {
 			q.reportError(err)
 		}

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### v1.2.2 - 16 April 2026
+- Fix goroutine panics not being reported to Discord before crashing — panics in `Go()`-spawned goroutines now post to the error channel and re-panic.
+- Add `!dev panic` command to intentionally trigger a panic for testing.
+- Fix tournament creation being non-idempotent — duplicate creation attempts (e.g. on bot restart) now silently no-op via `INSERT OR IGNORE`.
+
 ### v1.2.1 - 10 April 2026
 - Fix bug where a crash at just the right moment (when tourney starts) would cause an error as it tries to create a duplicate entry.
 
