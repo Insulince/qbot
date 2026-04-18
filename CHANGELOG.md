@@ -1,5 +1,8 @@
 # CHANGELOG
 
+### v1.3.1 - 18 April 2026
+- Fix scheduled announcements crashing and repeating when one server has removed the bot — per-guild failures are now logged and skipped instead of bringing down the scheduler for all servers.
+
 ### v1.3.0 - 17 April 2026
 - Add `!clearwave` command — remove your own wave entry from the current tournament leaderboard.
 - Add `!shame` command — posts the shame GIF, optionally tagging a specific user.

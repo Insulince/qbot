@@ -87,7 +87,8 @@ func (q *QBot) startScheduler(ctx context.Context) error {
 func (q *QBot) announceLeaderboard() error {
 	for guildId := range q.guilds {
 		if err := q.handleLeaderboard(Cmd{GuildId: guildId}, true); err != nil {
-			return errors.Wrapf(err, "handling leaderboard for guild %s", guildId)
+			// Log and continue — one guild failing should not prevent others from receiving the leaderboard.
+			slog.Error("failed to announce leaderboard for guild", "guildId", guildId, "error", err)
 		}
 	}
 	return nil
@@ -120,8 +121,10 @@ func (q *QBot) announceMessage(key, msg string) error {
 		}
 
 		if _, err = q.session.ChannelMessageSendComplex(g.AnnouncementChannelId, message); err != nil {
-			q.mustPost(g.AnnouncementChannelId, "❌ Error: Failed to send announcement message and image.")
-			return errors.Wrapf(err, "send announcement message and image")
+			// Log and continue — one guild failing (e.g. bot removed, 403) should not
+			// prevent other guilds from receiving the announcement or crash the scheduler.
+			slog.Error("failed to send scheduled announcement", "event", key, "guild", g.Name, "channel", g.AnnouncementChannelId, "error", err)
+			continue
 		}
 
 		slog.Info("scheduled message sent", "event", key, "guild", g.Name, "message", mentionMsg)
