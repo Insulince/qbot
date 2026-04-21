@@ -2,6 +2,7 @@ package qbot
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -35,6 +36,8 @@ func (q *QBot) handleDev(cmd Cmd) error {
 		return q.handleDevParseTourneyName(cmd)
 	case `guild`:
 		return q.handleDevGuild(cmd)
+	case `servers`:
+		return q.handleDevServers(cmd)
 	default:
 		q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("❌ unknown dev sub-command: `%s`", cmd.Command))
 		return nil
@@ -84,6 +87,18 @@ func (q *QBot) handleDevParseTourneyName(cmd Cmd) error {
 
 func (q *QBot) handleDevGuild(cmd Cmd) error {
 	q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("message originated from guild %q", cmd.GuildId))
+
+	return nil
+}
+
+func (q *QBot) handleDevServers(cmd Cmd) error {
+	names := make([]string, 0, len(q.guilds))
+	for _, g := range q.guilds {
+		names = append(names, g.Name)
+	}
+	sort.Strings(names)
+
+	q.mustPost(cmd.Message.ChannelID, fmt.Sprintf("✅ configured servers (%d):\n%s", len(names), strings.Join(names, "\n")))
 
 	return nil
 }

@@ -1,5 +1,5 @@
 set shell := ["/bin/bash", "-cu"]
-set windows-shell := ["cmd", "/c"]
+set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 set dotenv-load := true
 
 root_dir := justfile_directory()
@@ -42,6 +42,15 @@ ssh:
     echo For editing config do:
     echo "apt-get update && apt-get install vim -y && vim /var/lib/litefs/qbot/config.json"
     fly ssh console -a qbot
+
+# Recipe restart will restart the qbot app on fly.io.
+restart:
+    fly machines restart -a qbot
+
+# Recipe push-config will upload the local config.json to the deployed bot on fly.io.
+push-config:
+    fly -a qbot ssh console --command "rm /var/lib/litefs/qbot/config.json"
+    fly -a qbot sftp put "./config.json" "/var/lib/litefs/qbot/config.json"
 
 # Recipe backup will run backup.bat which copies the sqlite db file from fly to the local machine.
 backup:
