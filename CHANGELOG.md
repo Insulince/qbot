@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### v1.3.2 - 21 April 2026
+- Add `!dev servers` command — lists names of all configured servers from config.
+- Add `just restart` recipe — restarts the qbot app on fly.io.
+- Add `just push-config` recipe — uploads local config.json to the deployed bot.
+
 ### v1.3.1 - 18 April 2026
 - Fix scheduled announcements crashing and repeating when one server has removed the bot — per-guild failures are now logged and skipped instead of bringing down the scheduler for all servers.
 
